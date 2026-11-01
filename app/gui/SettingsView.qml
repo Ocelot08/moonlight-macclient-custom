@@ -1305,24 +1305,6 @@ Flickable {
                     ToolTip.visible: hovered
                     ToolTip.text: qsTr("Prevents the screensaver from starting or the display from going to sleep while streaming.")
                 }
-
-                CheckBox {
-                    id: disableAwdlCheck
-                    width: parent.width
-                    visible: SystemProperties.isDarwin
-                    text: qsTr("Disable AWDL while streaming")
-                    font.pointSize: 12
-                    checked: StreamingPreferences.disableAwdlDuringStream
-                    onCheckedChanged: {
-                        StreamingPreferences.disableAwdlDuringStream = checked
-                    }
-
-                    ToolTip.delay: 1000
-                    ToolTip.timeout: 10000
-                    ToolTip.visible: hovered
-                    ToolTip.text: qsTr("Turns off Apple Wireless Direct Link (used by AirDrop, AirPlay, and Handoff) for the duration of the stream, which can reduce Wi-Fi stutter.") + " " +
-                                  qsTr("Requires a one-time passwordless sudo rule for 'ifconfig awdl0 down'/'up' (e.g. in /etc/sudoers.d/); otherwise this silently has no effect.")
-                }
             }
         }
     }
@@ -1867,6 +1849,24 @@ Flickable {
                     ToolTip.text: qsTr("Display real-time stream performance information while streaming.") + "\n\n" +
                                   qsTr("You can toggle it at any time while streaming using Ctrl+Alt+Shift+S or Select+L1+R1+X.") + "\n\n" +
                                   qsTr("The performance overlay is not supported on Steam Link or Raspberry Pi.")
+                }
+
+                CheckBox {
+                    id: disableAwdlCheck
+                    width: parent.width
+                    visible: SystemProperties.isDarwin
+                    text: qsTr("Disable AWDL while streaming (May prevent stuttering on Macs)")
+                    font.pointSize: 12
+                    checked: StreamingPreferences.disableAwdlDuringStream
+                    onCheckedChanged: {
+                        StreamingPreferences.disableAwdlDuringStream = checked
+                    }
+
+                    ToolTip.delay: 1000
+                    ToolTip.timeout: 10000
+                    ToolTip.visible: hovered
+                    ToolTip.text: qsTr("Turns off Apple Wireless Direct Link (used by AirDrop, AirPlay, and Handoff) for the duration of the stream, which can reduce Wi-Fi stutter.") + " " +
+                                  qsTr("Requires a one-time passwordless sudo rule for 'ifconfig awdl0 down'/'up' (e.g. in /etc/sudoers.d/); otherwise this silently has no effect.")
                 }
             }
         }
