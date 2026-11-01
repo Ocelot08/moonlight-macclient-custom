@@ -111,9 +111,7 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
                     "Detected minimize combo");
         SDL_MinimizeWindow(m_Window);
 
-        // Shown just before the window minimizes, so it likely won't be visible in
-        // practice - included anyway since only the quit combos are excluded.
-        showHotkeyToast("Window minimized");
+        // No toast: the window (and the toast with it) is gone right after this
         break;
 
     case KeyComboPasteText:
