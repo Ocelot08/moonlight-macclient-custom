@@ -15,11 +15,19 @@ OverlayManager::OverlayManager() :
     m_Overlays[OverlayType::OverlayStatusUpdate].color = {0xCC, 0x00, 0x00, 0xFF};
     m_Overlays[OverlayType::OverlayStatusUpdate].fontSize = 36;
 
+    // Fixed (not per-message dynamic) width for the hotkey toast and list, so the box
+    // doesn't resize as ON/OFF status changes. Set to the longest line across every
+    // hotkey toggle message, "R  Tick-based scrolling: OFF" (measured 484px at 28pt),
+    // plus 40px slack - re-measure and update this if the hotkey text ever changes.
+    static const int HOTKEY_OVERLAY_FIXED_WIDTH = 524;
+
     m_Overlays[OverlayType::OverlayHotkeyToast].color = {0xFF, 0xFF, 0xFF, 0xFF};
     m_Overlays[OverlayType::OverlayHotkeyToast].fontSize = 28;
+    m_Overlays[OverlayType::OverlayHotkeyToast].fixedWidth = HOTKEY_OVERLAY_FIXED_WIDTH;
 
     m_Overlays[OverlayType::OverlayHotkeyList].color = {0xFF, 0xFF, 0xFF, 0xFF};
     m_Overlays[OverlayType::OverlayHotkeyList].fontSize = 28;
+    m_Overlays[OverlayType::OverlayHotkeyList].fixedWidth = HOTKEY_OVERLAY_FIXED_WIDTH;
 
     // While TTF will usually not be initialized here, it is valid for that not to
     // be the case, since Session destruction is deferred and could overlap with
@@ -153,6 +161,11 @@ void OverlayManager::notifyOverlayUpdated(OverlayType type)
         }
     }
 
+    // A fixed width means always render at exactly that width; otherwise size the
+    // box to each message's own content (within the usual 1024px wrapping cap).
+    bool hasFixedWidth = m_Overlays[type].fixedWidth > 0;
+    int renderWrapWidth = hasFixedWidth ? m_Overlays[type].fixedWidth : 1024;
+
     // Exchange the old surface with the new one
     SDL_Surface* oldSurface = (SDL_Surface*)SDL_AtomicSetPtr(
         (void**)&m_Overlays[type].surface,
@@ -163,7 +176,8 @@ void OverlayManager::notifyOverlayUpdated(OverlayType type)
                                       m_Overlays[type].color,
                                       {0, 0, 0, 255},
                                       4,
-                                      1024)
+                                      renderWrapWidth,
+                                      !hasFixedWidth)
             : nullptr);
 
     // Notify the renderer
@@ -175,7 +189,7 @@ void OverlayManager::notifyOverlayUpdated(OverlayType type)
     }
 }
 
-SDL_Surface* OverlayManager::RenderTextOutlinedWrapped(TTF_Font* font, const char* text, SDL_Color textColor, SDL_Color outlineColor, int outlineWidth, int wrapWidth) {
+SDL_Surface* OverlayManager::RenderTextOutlinedWrapped(TTF_Font* font, const char* text, SDL_Color textColor, SDL_Color outlineColor, int outlineWidth, int wrapWidth, bool tightenToContent) {
     if (text == nullptr || text[0] == '\0') {
         return nullptr;
     }
@@ -186,8 +200,8 @@ SDL_Surface* OverlayManager::RenderTextOutlinedWrapped(TTF_Font* font, const cha
     // Verify that the string won't require wrapping (which could cause the outline and the text
     // to diverge due to different wrapping positions). While we're at it, remember the widest
     // line's extent (from this same measurement call, so it's consistent with whatever SDL_ttf
-    // itself considers each line's width to be) so the rendered box can be sized closer to the
-    // actual content than the caller's maximum wrapWidth.
+    // itself considers each line's width to be) in case the caller wants the box sized closer
+    // to the actual content than its maximum wrapWidth.
     //
     // FIXME: We do this rather than just disabling wrapping entirely (wrapWidth = 0) because we
     // need further testing to ensure that all renderers can handle non-NPOT overlay textures.
@@ -205,16 +219,18 @@ SDL_Surface* OverlayManager::RenderTextOutlinedWrapped(TTF_Font* font, const cha
         }
     }
 
-    // Leave generous slack: outline rendering can extend a glyph's visual footprint beyond the
-    // advance-width metrics used above, and a wrapLength set too close to the measured width
-    // risks wrapping the last word early (as happened with a smaller margin here before).
-    // Never exceed the caller's original maximum.
-    int tightWrapWidth = qMin(wrapWidth, tightWidth + 40);
+    // When the caller wants a box tightened to this message's own content, leave generous
+    // slack: outline rendering can extend a glyph's visual footprint beyond the advance-width
+    // metrics used above, and a wrapLength set too close to the measured width risks wrapping
+    // the last word early (as happened with a smaller margin here before). Never exceed the
+    // caller's original maximum. Otherwise (fixed width), just render at exactly wrapWidth so
+    // the box doesn't change size as the message content changes.
+    int renderWidth = tightenToContent ? qMin(wrapWidth, tightWidth + 40) : wrapWidth;
 
     // Draw text twice, but outline is a bit bigger
-    auto outlineSurface = TTF_RenderUTF8_Blended_Wrapped(font, text, outlineColor, tightWrapWidth);
+    auto outlineSurface = TTF_RenderUTF8_Blended_Wrapped(font, text, outlineColor, renderWidth);
     TTF_SetFontOutline(font, 0);
-    auto textSurface = TTF_RenderUTF8_Blended_Wrapped(font, text, textColor, tightWrapWidth);
+    auto textSurface = TTF_RenderUTF8_Blended_Wrapped(font, text, textColor, renderWidth);
     TTF_SetFontOutline(font, oldOutline);
 
     if (outlineSurface == nullptr || textSurface == nullptr) {
@@ -228,6 +244,29 @@ SDL_Surface* OverlayManager::RenderTextOutlinedWrapped(TTF_Font* font, const cha
     SDL_BlitSurface(textSurface, nullptr, outlineSurface, &dst);
 
     SDL_FreeSurface(textSurface);
+
+    // SDL_ttf's wrapped render tight-fits to the actual content regardless of wrapWidth
+    // when nothing needs to wrap (verified: passing 1024 vs 4096 for the same short text
+    // produces an identical, narrower surface). So for a fixed-width box, passing wrapWidth
+    // through alone only sets an upper bound before wrapping kicks in - it does not by
+    // itself make a shorter message's surface any wider. Pad it out here instead, left-
+    // aligned, transparent on the right, so every message in a fixed-width overlay renders
+    // at exactly the same box width.
+    if (!tightenToContent && outlineSurface->w < wrapWidth) {
+        SDL_Surface* padded = SDL_CreateRGBSurfaceWithFormat(0, wrapWidth, outlineSurface->h, 32, outlineSurface->format->format);
+        if (padded != nullptr) {
+            SDL_FillRect(padded, nullptr, SDL_MapRGBA(padded->format, 0, 0, 0, 0));
+
+            // Straight copy (not blend) so the source's own alpha is preserved exactly
+            SDL_SetSurfaceBlendMode(outlineSurface, SDL_BLENDMODE_NONE);
+            SDL_Rect padDst = { 0, 0, outlineSurface->w, outlineSurface->h };
+            SDL_BlitSurface(outlineSurface, nullptr, padded, &padDst);
+
+            SDL_FreeSurface(outlineSurface);
+            outlineSurface = padded;
+        }
+    }
+
     return outlineSurface;
 }
 

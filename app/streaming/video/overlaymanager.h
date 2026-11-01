@@ -44,13 +44,17 @@ public:
 
 private:
     void notifyOverlayUpdated(OverlayType type);
-    SDL_Surface* RenderTextOutlinedWrapped(TTF_Font* font, const char* text, SDL_Color textColor, SDL_Color outlineColor, int outlineWidth, int wrapWidth);
+    SDL_Surface* RenderTextOutlinedWrapped(TTF_Font* font, const char* text, SDL_Color textColor, SDL_Color outlineColor, int outlineWidth, int wrapWidth, bool tightenToContent);
 
     struct {
         bool enabled;
         int fontSize;
         SDL_Color color;
         char text[1024];
+
+        // 0 = size the box to each message's own content (may change width per-update).
+        // >0 = always render at exactly this width, so the box never jumps around.
+        int fixedWidth;
 
         TTF_Font* font;
         SDL_Surface* surface;
