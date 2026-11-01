@@ -200,7 +200,7 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
 
         updateKeyboardGrabState();
 
-        showHotkeyToast(QString("Keyboard grab: %1").arg(isSystemKeyCaptureActive() ? "ON" : "OFF"));
+        showHotkeyToast(QString("Shortcut capture: %1").arg(isSystemKeyCaptureActive() ? "ON" : "OFF"));
         refreshHotkeyListIfVisible();
         break;
 
@@ -682,28 +682,20 @@ QString SdlInputHandler::buildHotkeyStatusList()
     auto onOff = [](bool enabled) { return enabled ? "ON" : "OFF"; };
 
     lines << "Hotkeys SHFT+CTRL+ALT:";
-
-    // Quit, minimize, and exit first
+    lines << "H  Toggle this list";
     lines << "Q  Quit";
     lines << "D  Minimize";
     lines << "E  Quit and exit host app";
-
-    // Then actions with no ON/OFF status to show
     lines << "X  Toggle full screen";
     lines << "V  Paste clipboard text";
-
-    // Then the stateful ON/OFF toggles
-    lines << QString("Z  Mouse capture: %1").arg(onOff(isCaptureActive()));
     lines << QString("S  Stats overlay: %1").arg(onOff(Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayDebug)));
+    lines << QString("K  Shortcut capture: %1").arg(onOff(isSystemKeyCaptureActive()));
+    lines << QString("W  Swap Command/Control keys: %1").arg(onOff(m_SwapCmdCtrlKeys));
+    lines << QString("Z  Mouse capture: %1").arg(onOff(isCaptureActive()));
     lines << QString("M  Absolute mouse mode: %1").arg(onOff(m_AbsoluteMouseMode));
     lines << QString("C  Cursor hidden: %1").arg(onOff(m_MouseCursorCapturedVisibilityState == SDL_DISABLE));
     lines << QString("L  Pointer region lock: %1").arg(onOff(m_PointerRegionLockActive));
-    lines << QString("K  Keyboard grab: %1").arg(onOff(isSystemKeyCaptureActive()));
     lines << QString("R  Tick-based scrolling: %1").arg(onOff(m_TickBasedScrollMode));
-    lines << QString("W  Swap Command/Control keys: %1").arg(onOff(m_SwapCmdCtrlKeys));
-
-    // The hotkey list itself last
-    lines << "H  Toggle this list";
 
     return lines.join('\n');
 }
