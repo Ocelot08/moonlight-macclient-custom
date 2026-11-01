@@ -538,6 +538,16 @@ public:
                     renderRect.x = 0;
                     renderRect.y = m_LastDrawableHeight - overlayTexture.height;
                 }
+                else if (i == Overlay::OverlayHotkeyToast) {
+                    // Top right
+                    renderRect.x = m_LastDrawableWidth - overlayTexture.width;
+                    renderRect.y = m_LastDrawableHeight - overlayTexture.height;
+                }
+                else if (i == Overlay::OverlayHotkeyList) {
+                    // Bottom right
+                    renderRect.x = m_LastDrawableWidth - overlayTexture.width;
+                    renderRect.y = 0;
+                }
 
                 renderRect.w = overlayTexture.width;
                 renderRect.h = overlayTexture.height;

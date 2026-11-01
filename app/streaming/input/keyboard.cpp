@@ -189,6 +189,25 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
         SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
                     "Detected scroll mode toggle combo: now using %s-based scrolling",
                     m_TickBasedScrollMode ? "tick" : "amount");
+
+        showHotkeyToast(QString("Tick-based scrolling: %1").arg(m_TickBasedScrollMode ? "ON" : "OFF"));
+
+        // Refresh the hotkey list if it's currently showing, so it doesn't go stale
+        if (Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayHotkeyList)) {
+            Session::get()->getOverlayManager().updateOverlayText(Overlay::OverlayHotkeyList,
+                                                                   buildHotkeyStatusList().toUtf8().constData());
+        }
+        break;
+
+    case KeyComboToggleHotkeyList:
+        if (Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayHotkeyList)) {
+            Session::get()->getOverlayManager().setOverlayState(Overlay::OverlayHotkeyList, false);
+        }
+        else {
+            Session::get()->getOverlayManager().updateOverlayText(Overlay::OverlayHotkeyList,
+                                                                   buildHotkeyStatusList().toUtf8().constData());
+            Session::get()->getOverlayManager().setOverlayState(Overlay::OverlayHotkeyList, true);
+        }
         break;
 
     default:
@@ -599,4 +618,49 @@ void SdlInputHandler::raiseAllKeys()
     }
 
     m_KeysDown.clear();
+}
+
+#define HOTKEY_TOAST_DURATION_MS 2500
+
+Uint32 SdlInputHandler::hotkeyToastTimerCallback(Uint32, void*)
+{
+    if (Session::get() != nullptr) {
+        Session::get()->getOverlayManager().setOverlayState(Overlay::OverlayHotkeyToast, false);
+    }
+
+    // One-shot timer
+    return 0;
+}
+
+void SdlInputHandler::showHotkeyToast(const QString& text)
+{
+    Session::get()->getOverlayManager().updateOverlayText(Overlay::OverlayHotkeyToast, text.toUtf8().constData());
+    Session::get()->getOverlayManager().setOverlayState(Overlay::OverlayHotkeyToast, true);
+
+    // Restart the auto-hide timer so repeated toggles keep extending the display time
+    SDL_RemoveTimer(m_HotkeyToastTimer);
+    m_HotkeyToastTimer = SDL_AddTimer(HOTKEY_TOAST_DURATION_MS, hotkeyToastTimerCallback, this);
+}
+
+QString SdlInputHandler::buildHotkeyStatusList()
+{
+    QStringList lines;
+
+    auto onOff = [](bool enabled) { return enabled ? "ON" : "OFF"; };
+
+    lines << "Ctrl+Alt+Shift+Q  Quit";
+    lines << QString("Ctrl+Alt+Shift+Z  Mouse capture: %1").arg(onOff(isCaptureActive()));
+    lines << "Ctrl+Alt+Shift+X  Toggle full screen";
+    lines << QString("Ctrl+Alt+Shift+S  Stats overlay: %1").arg(onOff(Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayDebug)));
+    lines << QString("Ctrl+Alt+Shift+M  Absolute mouse mode: %1").arg(onOff(m_AbsoluteMouseMode));
+    lines << QString("Ctrl+Alt+Shift+C  Cursor hidden: %1").arg(onOff(m_MouseCursorCapturedVisibilityState == SDL_DISABLE));
+    lines << "Ctrl+Alt+Shift+D  Minimize";
+    lines << "Ctrl+Alt+Shift+V  Paste clipboard text";
+    lines << QString("Ctrl+Alt+Shift+L  Pointer region lock: %1").arg(onOff(m_PointerRegionLockActive));
+    lines << "Ctrl+Alt+Shift+E  Quit and exit host app";
+    lines << QString("Ctrl+Alt+Shift+K  Keyboard grab: %1").arg(onOff(isSystemKeyCaptureActive()));
+    lines << QString("Ctrl+Alt+Shift+R  Tick-based scrolling: %1").arg(onOff(m_TickBasedScrollMode));
+    lines << "Ctrl+Alt+Shift+H  Toggle this list";
+
+    return lines.join('\n');
 }

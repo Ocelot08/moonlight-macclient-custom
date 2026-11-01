@@ -414,6 +414,10 @@ public:
                 [m_OverlayTextFields[type] setAlignment:NSTextAlignmentLeft];
                 break;
             case Overlay::OverlayStatusUpdate:
+            case Overlay::OverlayHotkeyToast:
+            case Overlay::OverlayHotkeyList:
+                // NB: This renderer doesn't distinguish vertical position between
+                // overlay types today (pre-existing limitation), only horizontal.
                 [m_OverlayTextFields[type] setAlignment:NSTextAlignmentRight];
                 break;
             default:

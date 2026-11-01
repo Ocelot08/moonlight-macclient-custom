@@ -11,6 +11,8 @@ namespace Overlay {
 enum OverlayType {
     OverlayDebug,
     OverlayStatusUpdate,
+    OverlayHotkeyToast,
+    OverlayHotkeyList,
     OverlayMax
 };
 

@@ -169,6 +169,7 @@ private:
         KeyComboQuitAndExit,
         KeyComboToggleKeyboardGrab,
         KeyComboToggleScrollMode,
+        KeyComboToggleHotkeyList,
         KeyComboMax
     };
 
@@ -189,8 +190,15 @@ private:
 
     void performSpecialKeyCombo(KeyCombo combo);
 
+    void showHotkeyToast(const QString& text);
+
+    QString buildHotkeyStatusList();
+
     static
     Uint32 longPressTimerCallback(Uint32 interval, void* param);
+
+    static
+    Uint32 hotkeyToastTimerCallback(Uint32 interval, void* param);
 
     static
     Uint32 mouseEmulationTimerCallback(Uint32 interval, void* param);
@@ -212,6 +220,7 @@ private:
     bool m_SwapCmdCtrlKeys;
     double m_ScrollSpeedMultiplier;
     bool m_TickBasedScrollMode;
+    SDL_TimerID m_HotkeyToastTimer;
     double m_ScrollRemainderX;
     double m_ScrollRemainderY;
     bool m_SwapFaceButtons;

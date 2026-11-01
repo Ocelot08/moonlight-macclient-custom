@@ -17,6 +17,7 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
       m_SwapCmdCtrlKeys(prefs.swapCmdCtrlKeys),
       m_ScrollSpeedMultiplier(prefs.scrollSpeedPercent / 100.0),
       m_TickBasedScrollMode(prefs.tickBasedScrolling),
+      m_HotkeyToastTimer(0),
       m_ScrollRemainderX(0.0),
       m_ScrollRemainderY(0.0),
       m_SwapFaceButtons(prefs.swapFaceButtons),
@@ -144,6 +145,11 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
     m_SpecialKeyCombos[KeyComboToggleScrollMode].keyCode = SDLK_r;
     m_SpecialKeyCombos[KeyComboToggleScrollMode].scanCode = SDL_SCANCODE_R;
     m_SpecialKeyCombos[KeyComboToggleScrollMode].enabled = true;
+
+    m_SpecialKeyCombos[KeyComboToggleHotkeyList].keyCombo = KeyComboToggleHotkeyList;
+    m_SpecialKeyCombos[KeyComboToggleHotkeyList].keyCode = SDLK_h;
+    m_SpecialKeyCombos[KeyComboToggleHotkeyList].scanCode = SDL_SCANCODE_H;
+    m_SpecialKeyCombos[KeyComboToggleHotkeyList].enabled = true;
 
     m_OldIgnoreDevices = SDL_GetHint(SDL_HINT_GAMECONTROLLER_IGNORE_DEVICES);
     m_OldIgnoreDevicesExcept = SDL_GetHint(SDL_HINT_GAMECONTROLLER_IGNORE_DEVICES_EXCEPT);
