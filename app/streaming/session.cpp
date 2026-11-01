@@ -40,6 +40,7 @@
 #include <QGuiApplication>
 #include <QCursor>
 #include <QScreen>
+#include <QProcess>
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QQuickOpenGLUtils>
@@ -575,6 +576,7 @@ Session::Session(NvComputer* computer, NvApp& app, StreamingPreferences *prefere
       m_AudioMuted(false),
       m_QtWindow(nullptr),
       m_UnexpectedTermination(true), // Failure prior to streaming is unexpected
+      m_DisabledAwdl(false),
       m_InputHandler(nullptr),
       m_MouseEmulationRefCount(0),
       m_FlushingWindowEventsRef(0),
@@ -1948,6 +1950,24 @@ void Session::exec()
         SDL_DisableScreenSaver();
     }
 
+#ifdef Q_OS_DARWIN
+    // Disable AWDL if requested. macOS periodically scans for AWDL peers (AirDrop,
+    // AirPlay, Handoff, etc) which can cause brief Wi-Fi interruptions and stream
+    // stutter. This requires a passwordless sudo rule for these exact commands
+    // (e.g. in /etc/sudoers.d/) or it will silently fail rather than block startup.
+    if (m_Preferences->disableAwdlDuringStream) {
+        int ret = QProcess::execute("/usr/bin/sudo", {"-n", "/sbin/ifconfig", "awdl0", "down"});
+        if (ret == 0) {
+            m_DisabledAwdl = true;
+        }
+        else {
+            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
+                        "Failed to disable AWDL (exit code %d). Is passwordless sudo configured for ifconfig awdl0?",
+                        ret);
+        }
+    }
+#endif
+
     // Hide Qt's fake mouse cursor on EGLFS systems
     if (QGuiApplication::platformName() == "eglfs") {
         QGuiApplication::setOverrideCursor(QCursor(Qt::BlankCursor));
@@ -2328,6 +2348,12 @@ DispatchDeferredCleanup:
     // so we can return to the Qt GUI ASAP.
     m_InputHandler->setCaptureActive(false);
     SDL_EnableScreenSaver();
+#ifdef Q_OS_DARWIN
+    if (m_DisabledAwdl) {
+        QProcess::execute("/usr/bin/sudo", {"-n", "/sbin/ifconfig", "awdl0", "up"});
+        m_DisabledAwdl = false;
+    }
+#endif
     SDL_SetHint(SDL_HINT_TIMER_RESOLUTION, "0");
     if (QGuiApplication::platformName() == "eglfs") {
         QGuiApplication::restoreOverrideCursor();

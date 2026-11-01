@@ -1305,6 +1305,24 @@ Flickable {
                     ToolTip.visible: hovered
                     ToolTip.text: qsTr("Prevents the screensaver from starting or the display from going to sleep while streaming.")
                 }
+
+                CheckBox {
+                    id: disableAwdlCheck
+                    width: parent.width
+                    visible: SystemProperties.isDarwin
+                    text: qsTr("Disable AWDL while streaming")
+                    font.pointSize: 12
+                    checked: StreamingPreferences.disableAwdlDuringStream
+                    onCheckedChanged: {
+                        StreamingPreferences.disableAwdlDuringStream = checked
+                    }
+
+                    ToolTip.delay: 1000
+                    ToolTip.timeout: 10000
+                    ToolTip.visible: hovered
+                    ToolTip.text: qsTr("Turns off Apple Wireless Direct Link (used by AirDrop, AirPlay, and Handoff) for the duration of the stream, which can reduce Wi-Fi stutter.") + " " +
+                                  qsTr("Requires a one-time passwordless sudo rule for 'ifconfig awdl0 down'/'up' (e.g. in /etc/sudoers.d/); otherwise this silently has no effect.")
+                }
             }
         }
     }
