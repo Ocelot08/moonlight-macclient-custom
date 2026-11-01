@@ -108,7 +108,7 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
             SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
                         "Cursor can only be shown in remote desktop mouse mode");
 
-            showHotkeyToast("Needs Absolute mouse mode (M)");
+            showHotkeyToast("Cursor hide only works in\nAbsolute mouse mode");
         }
         break;
 
