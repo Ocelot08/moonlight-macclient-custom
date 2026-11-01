@@ -170,6 +170,7 @@ private:
         KeyComboToggleKeyboardGrab,
         KeyComboToggleScrollMode,
         KeyComboToggleHotkeyList,
+        KeyComboToggleCmdCtrlSwap,
         KeyComboMax
     };
 
@@ -193,6 +194,8 @@ private:
     void showHotkeyToast(const QString& text);
 
     QString buildHotkeyStatusList();
+
+    void refreshHotkeyListIfVisible();
 
     static
     Uint32 longPressTimerCallback(Uint32 interval, void* param);

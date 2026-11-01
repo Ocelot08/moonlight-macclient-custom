@@ -17,9 +17,9 @@ OverlayManager::OverlayManager() :
 
     // Fixed (not per-message dynamic) width for the hotkey toast and list, so the box
     // doesn't resize as ON/OFF status changes. Set to the longest line across every
-    // hotkey toggle message, "R  Tick-based scrolling: OFF" (measured 484px at 28pt),
-    // plus 40px slack - re-measure and update this if the hotkey text ever changes.
-    static const int HOTKEY_OVERLAY_FIXED_WIDTH = 524;
+    // hotkey toggle message, "W  Swap Command/Control keys: OFF" (measured 569px at
+    // 28pt), plus 40px slack - re-measure and update this if the hotkey text ever changes.
+    static const int HOTKEY_OVERLAY_FIXED_WIDTH = 609;
 
     m_Overlays[OverlayType::OverlayHotkeyToast].color = {0xFF, 0xFF, 0xFF, 0xFF};
     m_Overlays[OverlayType::OverlayHotkeyToast].fontSize = 28;

@@ -1478,7 +1478,8 @@ Flickable {
                     ToolTip.delay: 1000
                     ToolTip.timeout: 10000
                     ToolTip.visible: hovered
-                    ToolTip.text: qsTr("Sends Control when you press Command, and sends the Windows key when you press Control. This matches the position of Ctrl and the OS-modifier key between Mac and Windows keyboards.")
+                    ToolTip.text: qsTr("Sends Control when you press Command, and sends the Windows key when you press Control. This matches the position of Ctrl and the OS-modifier key between Mac and Windows keyboards.") + " " +
+                                  qsTr("This sets the default when a stream starts; press Ctrl+Alt+Shift+W at any time during a stream to toggle it live.")
                 }
 
                 Label {

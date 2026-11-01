@@ -48,6 +48,7 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
         raiseAllKeys();
 
         showHotkeyToast(QString("Mouse capture: %1").arg(isCaptureActive() ? "ON" : "OFF"));
+        refreshHotkeyListIfVisible();
         break;
 
     case KeyComboToggleFullScreen:
@@ -72,6 +73,7 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
                                                             !Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayDebug));
 
         showHotkeyToast(QString("Stats overlay: %1").arg(Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayDebug) ? "ON" : "OFF"));
+        refreshHotkeyListIfVisible();
         break;
 
     case KeyComboToggleMouseMode:
@@ -88,6 +90,7 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
         setCaptureActive(true);
 
         showHotkeyToast(QString("Absolute mouse mode: %1").arg(m_AbsoluteMouseMode ? "ON" : "OFF"));
+        refreshHotkeyListIfVisible();
         break;
 
     case KeyComboToggleCursorHide:
@@ -99,6 +102,7 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
             SDL_ShowCursor(m_MouseCursorCapturedVisibilityState);
 
             showHotkeyToast(QString("Cursor hidden: %1").arg(m_MouseCursorCapturedVisibilityState == SDL_DISABLE ? "ON" : "OFF"));
+            refreshHotkeyListIfVisible();
         }
         else {
             SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
@@ -165,6 +169,7 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
         updatePointerRegionLock();
 
         showHotkeyToast(QString("Pointer region lock: %1").arg(m_PointerRegionLockActive ? "ON" : "OFF"));
+        refreshHotkeyListIfVisible();
         break;
 
     case KeyComboQuitAndExit:
@@ -196,6 +201,7 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
         updateKeyboardGrabState();
 
         showHotkeyToast(QString("Keyboard grab: %1").arg(isSystemKeyCaptureActive() ? "ON" : "OFF"));
+        refreshHotkeyListIfVisible();
         break;
 
     case KeyComboToggleScrollMode:
@@ -212,12 +218,7 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
                     m_TickBasedScrollMode ? "tick" : "amount");
 
         showHotkeyToast(QString("Tick-based scrolling: %1").arg(m_TickBasedScrollMode ? "ON" : "OFF"));
-
-        // Refresh the hotkey list if it's currently showing, so it doesn't go stale
-        if (Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayHotkeyList)) {
-            Session::get()->getOverlayManager().updateOverlayText(Overlay::OverlayHotkeyList,
-                                                                   buildHotkeyStatusList().toUtf8().constData());
-        }
+        refreshHotkeyListIfVisible();
         break;
 
     case KeyComboToggleHotkeyList:
@@ -229,6 +230,17 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
                                                                    buildHotkeyStatusList().toUtf8().constData());
             Session::get()->getOverlayManager().setOverlayState(Overlay::OverlayHotkeyList, true);
         }
+        break;
+
+    case KeyComboToggleCmdCtrlSwap:
+        m_SwapCmdCtrlKeys = !m_SwapCmdCtrlKeys;
+
+        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
+                    "Detected Command/Control swap toggle combo: now %s",
+                    m_SwapCmdCtrlKeys ? "ON" : "OFF");
+
+        showHotkeyToast(QString("Swap Command/Control keys: %1").arg(m_SwapCmdCtrlKeys ? "ON" : "OFF"));
+        refreshHotkeyListIfVisible();
         break;
 
     default:
@@ -688,9 +700,18 @@ QString SdlInputHandler::buildHotkeyStatusList()
     lines << QString("L  Pointer region lock: %1").arg(onOff(m_PointerRegionLockActive));
     lines << QString("K  Keyboard grab: %1").arg(onOff(isSystemKeyCaptureActive()));
     lines << QString("R  Tick-based scrolling: %1").arg(onOff(m_TickBasedScrollMode));
+    lines << QString("W  Swap Command/Control keys: %1").arg(onOff(m_SwapCmdCtrlKeys));
 
     // The hotkey list itself last
     lines << "H  Toggle this list";
 
     return lines.join('\n');
+}
+
+void SdlInputHandler::refreshHotkeyListIfVisible()
+{
+    if (Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayHotkeyList)) {
+        Session::get()->getOverlayManager().updateOverlayText(Overlay::OverlayHotkeyList,
+                                                               buildHotkeyStatusList().toUtf8().constData());
+    }
 }

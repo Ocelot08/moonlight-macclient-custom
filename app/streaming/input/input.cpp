@@ -151,6 +151,11 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
     m_SpecialKeyCombos[KeyComboToggleHotkeyList].scanCode = SDL_SCANCODE_H;
     m_SpecialKeyCombos[KeyComboToggleHotkeyList].enabled = true;
 
+    m_SpecialKeyCombos[KeyComboToggleCmdCtrlSwap].keyCombo = KeyComboToggleCmdCtrlSwap;
+    m_SpecialKeyCombos[KeyComboToggleCmdCtrlSwap].keyCode = SDLK_w;
+    m_SpecialKeyCombos[KeyComboToggleCmdCtrlSwap].scanCode = SDL_SCANCODE_W;
+    m_SpecialKeyCombos[KeyComboToggleCmdCtrlSwap].enabled = true;
+
     m_OldIgnoreDevices = SDL_GetHint(SDL_HINT_GAMECONTROLLER_IGNORE_DEVICES);
     m_OldIgnoreDevicesExcept = SDL_GetHint(SDL_HINT_GAMECONTROLLER_IGNORE_DEVICES_EXCEPT);
 
