@@ -184,29 +184,32 @@ SDL_Surface* OverlayManager::RenderTextOutlinedWrapped(TTF_Font* font, const cha
     TTF_SetFontOutline(font, outlineWidth);
 
     // Verify that the string won't require wrapping (which could cause the outline and the text
-    // to diverge due to different wrapping positions). While we're at it, measure the widest
-    // individual line so the rendered box can be sized tightly to the actual content instead of
-    // always being as wide as the caller's maximum wrapWidth.
+    // to diverge due to different wrapping positions). While we're at it, remember the widest
+    // line's extent (from this same measurement call, so it's consistent with whatever SDL_ttf
+    // itself considers each line's width to be) so the rendered box can be sized closer to the
+    // actual content than the caller's maximum wrapWidth.
     //
     // FIXME: We do this rather than just disabling wrapping entirely (wrapWidth = 0) because we
     // need further testing to ensure that all renderers can handle non-NPOT overlay textures.
     int tightWidth = 0;
     for (const QString& line : QString(text).split('\n')) {
         int extent, count;
-        if (TTF_MeasureUTF8(font, line.toUtf8(), wrapWidth, &extent, &count) == 0 && count < line.size()) {
-            // If it requires wrapping, render it without the outline
-            TTF_SetFontOutline(font, oldOutline);
-            return TTF_RenderUTF8_Blended_Wrapped(font, text, textColor, wrapWidth);
-        }
+        if (TTF_MeasureUTF8(font, line.toUtf8(), wrapWidth, &extent, &count) == 0) {
+            if (count < line.size()) {
+                // If it requires wrapping, render it without the outline
+                TTF_SetFontOutline(font, oldOutline);
+                return TTF_RenderUTF8_Blended_Wrapped(font, text, textColor, wrapWidth);
+            }
 
-        int lineWidth, lineHeight;
-        if (TTF_SizeUTF8(font, line.toUtf8().constData(), &lineWidth, &lineHeight) == 0) {
-            tightWidth = qMax(tightWidth, lineWidth);
+            tightWidth = qMax(tightWidth, extent);
         }
     }
 
-    // Leave a little slack for the outline, but never exceed the caller's maximum
-    int tightWrapWidth = qMin(wrapWidth, tightWidth + outlineWidth * 2);
+    // Leave generous slack: outline rendering can extend a glyph's visual footprint beyond the
+    // advance-width metrics used above, and a wrapLength set too close to the measured width
+    // risks wrapping the last word early (as happened with a smaller margin here before).
+    // Never exceed the caller's original maximum.
+    int tightWrapWidth = qMin(wrapWidth, tightWidth + 40);
 
     // Draw text twice, but outline is a bit bigger
     auto outlineSurface = TTF_RenderUTF8_Blended_Wrapped(font, text, outlineColor, tightWrapWidth);
