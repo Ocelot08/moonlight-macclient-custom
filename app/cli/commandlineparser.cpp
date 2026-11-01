@@ -363,6 +363,8 @@ void StreamCommandLineParser::parse(const QStringList &args, StreamingPreference
     parser.addToggleOption("mute-on-focus-loss", "mute audio when Moonlight window loses focus");
     parser.addToggleOption("background-gamepad", "background gamepad input");
     parser.addToggleOption("reverse-scroll-direction", "inverted scroll direction");
+    parser.addToggleOption("swap-cmd-ctrl", "swap Command and Control keys (macOS)");
+    parser.addValueOption("scroll-speed", "scroll speed percentage (10-200)");
     parser.addToggleOption("swap-gamepad-buttons", "swap A/B and X/Y gamepad buttons (Nintendo-style)");
     parser.addToggleOption("keep-awake", "prevent display sleep while streaming");
     parser.addToggleOption("performance-overlay", "show performance overlay");
@@ -475,6 +477,15 @@ void StreamCommandLineParser::parse(const QStringList &args, StreamingPreference
 
     // Resolve --reverse-scroll-direction and --no-reverse-scroll-direction options
     preferences->reverseScrollDirection = parser.getToggleOptionValue("reverse-scroll-direction", preferences->reverseScrollDirection);
+
+    // Resolve --swap-cmd-ctrl and --no-swap-cmd-ctrl options
+    preferences->swapCmdCtrlKeys = parser.getToggleOptionValue("swap-cmd-ctrl", preferences->swapCmdCtrlKeys);
+
+    // Resolve --scroll-speed option
+    if (parser.isSet("scroll-speed")) {
+        int scrollSpeed = parser.getIntOption("scroll-speed");
+        preferences->scrollSpeedPercent = scrollSpeed < 10 ? 10 : (scrollSpeed > 200 ? 200 : scrollSpeed);
+    }
 
     // Resolve --swap-gamepad-buttons and --no-swap-gamepad-buttons options
     preferences->swapFaceButtons = parser.getToggleOptionValue("swap-gamepad-buttons", preferences->swapFaceButtons);

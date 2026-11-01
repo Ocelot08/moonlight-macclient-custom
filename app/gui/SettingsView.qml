@@ -1462,6 +1462,46 @@ Flickable {
                         StreamingPreferences.reverseScrollDirection = checked
                     }
                 }
+
+                CheckBox {
+                    id: swapCmdCtrlCheck
+                    hoverEnabled: true
+                    width: parent.width
+                    visible: SystemProperties.isDarwin
+                    text: qsTr("Swap Command and Control keys")
+                    font.pointSize: 12
+                    checked: StreamingPreferences.swapCmdCtrlKeys
+                    onCheckedChanged: {
+                        StreamingPreferences.swapCmdCtrlKeys = checked
+                    }
+
+                    ToolTip.delay: 1000
+                    ToolTip.timeout: 10000
+                    ToolTip.visible: hovered
+                    ToolTip.text: qsTr("Sends Control when you press Command, and sends the Windows key when you press Control. This matches the position of Ctrl and the OS-modifier key between Mac and Windows keyboards.")
+                }
+
+                Label {
+                    width: parent.width
+                    id: scrollSpeedTitle
+                    text: qsTr("Scroll speed: %1%").arg(StreamingPreferences.scrollSpeedPercent)
+                    font.pointSize: 12
+                    wrapMode: Text.Wrap
+                }
+
+                Slider {
+                    id: scrollSpeedSlider
+                    width: parent.width
+                    value: StreamingPreferences.scrollSpeedPercent
+                    stepSize: 10
+                    from: 10
+                    to: 200
+                    snapMode: "SnapOnRelease"
+                    onValueChanged: {
+                        scrollSpeedTitle.text = qsTr("Scroll speed: %1%").arg(value)
+                        StreamingPreferences.scrollSpeedPercent = value
+                    }
+                }
             }
         }
 

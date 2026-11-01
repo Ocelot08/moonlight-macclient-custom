@@ -211,7 +211,15 @@ void SdlInputHandler::handleMouseWheelEvent(SDL_MouseWheelEvent* event)
         event->preciseY = SDL_clamp(event->preciseY, -1.0f, 1.0f);
 #endif
 
-        LiSendHighResScrollEvent((short)(event->preciseY * 120)); // WHEEL_DELTA
+        // Apply the user's scroll speed multiplier, accumulating the fractional
+        // remainder so slow scrolling at low multipliers doesn't round down to zero.
+        double scaledDelta = (double)event->preciseY * m_ScrollSpeedMultiplier * 120 + m_ScrollRemainderY; // WHEEL_DELTA
+        short delta = (short)scaledDelta;
+        m_ScrollRemainderY = scaledDelta - delta;
+
+        if (delta != 0) {
+            LiSendHighResScrollEvent(delta);
+        }
     }
 
     if (event->preciseX != 0.0f) {
@@ -226,7 +234,14 @@ void SdlInputHandler::handleMouseWheelEvent(SDL_MouseWheelEvent* event)
         event->preciseX = SDL_clamp(event->preciseX, -1.0f, 1.0f);
 #endif
 
-        LiSendHighResHScrollEvent((short)(event->preciseX * 120)); // WHEEL_DELTA
+        // See comment above about the scroll speed multiplier and remainder accumulation
+        double scaledDelta = (double)event->preciseX * m_ScrollSpeedMultiplier * 120 + m_ScrollRemainderX; // WHEEL_DELTA
+        short delta = (short)scaledDelta;
+        m_ScrollRemainderX = scaledDelta - delta;
+
+        if (delta != 0) {
+            LiSendHighResHScrollEvent(delta);
+        }
     }
 #else
     if (event->y != 0) {
@@ -240,7 +255,14 @@ void SdlInputHandler::handleMouseWheelEvent(SDL_MouseWheelEvent* event)
         event->y = SDL_clamp(event->y, -1, 1);
 #endif
 
-        LiSendScrollEvent((signed char)event->y);
+        // See comment above about the scroll speed multiplier and remainder accumulation
+        double scaledDelta = (double)event->y * m_ScrollSpeedMultiplier + m_ScrollRemainderY;
+        signed char delta = (signed char)scaledDelta;
+        m_ScrollRemainderY = scaledDelta - delta;
+
+        if (delta != 0) {
+            LiSendScrollEvent(delta);
+        }
     }
 
     if (event->x != 0) {
@@ -254,7 +276,14 @@ void SdlInputHandler::handleMouseWheelEvent(SDL_MouseWheelEvent* event)
         event->x = SDL_clamp(event->x, -1, 1);
 #endif
 
-        LiSendHScrollEvent((signed char)event->x);
+        // See comment above about the scroll speed multiplier and remainder accumulation
+        double scaledDelta = (double)event->x * m_ScrollSpeedMultiplier + m_ScrollRemainderX;
+        signed char delta = (signed char)scaledDelta;
+        m_ScrollRemainderX = scaledDelta - delta;
+
+        if (delta != 0) {
+            LiSendHScrollEvent(delta);
+        }
     }
 #endif
 }

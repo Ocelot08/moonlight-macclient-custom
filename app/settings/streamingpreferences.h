@@ -153,6 +153,8 @@ public:
     Q_PROPERTY(bool muteOnFocusLoss MEMBER muteOnFocusLoss NOTIFY muteOnFocusLossChanged)
     Q_PROPERTY(bool backgroundGamepad MEMBER backgroundGamepad NOTIFY backgroundGamepadChanged)
     Q_PROPERTY(bool reverseScrollDirection MEMBER reverseScrollDirection NOTIFY reverseScrollDirectionChanged)
+    Q_PROPERTY(bool swapCmdCtrlKeys MEMBER swapCmdCtrlKeys NOTIFY swapCmdCtrlKeysChanged)
+    Q_PROPERTY(int scrollSpeedPercent MEMBER scrollSpeedPercent NOTIFY scrollSpeedPercentChanged)
     Q_PROPERTY(bool swapFaceButtons MEMBER swapFaceButtons NOTIFY swapFaceButtonsChanged)
     Q_PROPERTY(bool keepAwake MEMBER keepAwake NOTIFY keepAwakeChanged)
     Q_PROPERTY(CaptureSysKeysMode captureSysKeysMode MEMBER captureSysKeysMode NOTIFY captureSysKeysModeChanged)
@@ -186,6 +188,8 @@ public:
     bool muteOnFocusLoss;
     bool backgroundGamepad;
     bool reverseScrollDirection;
+    bool swapCmdCtrlKeys;
+    int scrollSpeedPercent;
     bool swapFaceButtons;
     bool keepAwake;
     int packetSize;
@@ -233,6 +237,8 @@ signals:
     void muteOnFocusLossChanged();
     void backgroundGamepadChanged();
     void reverseScrollDirectionChanged();
+    void swapCmdCtrlKeysChanged();
+    void scrollSpeedPercentChanged();
     void swapFaceButtonsChanged();
     void captureSysKeysModeChanged();
     void keepAwakeChanged();

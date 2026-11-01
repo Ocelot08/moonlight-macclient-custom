@@ -227,9 +227,22 @@ void SdlInputHandler::handleKeyEvent(SDL_KeyboardEvent* event)
     }
 
     // Set modifier flags
+    //
+    // When m_SwapCmdCtrlKeys is set, Cmd and Ctrl trade functional roles: Cmd acts as
+    // Ctrl (always sent, matching Ctrl's normal unconditional behavior) and Ctrl acts
+    // as the Windows/Meta key (gated behind isSystemKeyCaptureActive(), matching Cmd's
+    // normal behavior, since that gate exists to avoid sending OS-reserved shortcuts
+    // like the Windows key unless we've grabbed the keyboard).
     modifiers = 0;
     if (event->keysym.mod & KMOD_CTRL) {
-        modifiers |= MODIFIER_CTRL;
+        if (m_SwapCmdCtrlKeys) {
+            if (isSystemKeyCaptureActive()) {
+                modifiers |= MODIFIER_META;
+            }
+        }
+        else {
+            modifiers |= MODIFIER_CTRL;
+        }
     }
     if (event->keysym.mod & KMOD_ALT) {
         modifiers |= MODIFIER_ALT;
@@ -238,7 +251,10 @@ void SdlInputHandler::handleKeyEvent(SDL_KeyboardEvent* event)
         modifiers |= MODIFIER_SHIFT;
     }
     if (event->keysym.mod & KMOD_GUI) {
-        if (isSystemKeyCaptureActive()) {
+        if (m_SwapCmdCtrlKeys) {
+            modifiers |= MODIFIER_CTRL;
+        }
+        else if (isSystemKeyCaptureActive()) {
             modifiers |= MODIFIER_META;
         }
     }
@@ -385,11 +401,31 @@ void SdlInputHandler::handleKeyEvent(SDL_KeyboardEvent* event)
                 keyCode = 0xA1;
                 break;
             case SDL_SCANCODE_LCTRL:
-                keyCode = 0xA2;
+                if (m_SwapCmdCtrlKeys) {
+                    // Acting as Left Windows; inherit Cmd's gate on sending OS-reserved keys
+                    if (!isSystemKeyCaptureActive()) {
+                        return;
+                    }
+                    keyCode = 0x5B;
+                    modifiers |= MODIFIER_EXTENDED;
+                }
+                else {
+                    keyCode = 0xA2;
+                }
                 break;
             case SDL_SCANCODE_RCTRL:
-                keyCode = 0xA3;
-                modifiers |= MODIFIER_EXTENDED;
+                if (m_SwapCmdCtrlKeys) {
+                    // Acting as Right Windows; inherit Cmd's gate on sending OS-reserved keys
+                    if (!isSystemKeyCaptureActive()) {
+                        return;
+                    }
+                    keyCode = 0x5C;
+                    modifiers |= MODIFIER_EXTENDED;
+                }
+                else {
+                    keyCode = 0xA3;
+                    modifiers |= MODIFIER_EXTENDED;
+                }
                 break;
             case SDL_SCANCODE_LALT:
                 keyCode = 0xA4;
@@ -399,18 +435,31 @@ void SdlInputHandler::handleKeyEvent(SDL_KeyboardEvent* event)
                 modifiers |= MODIFIER_EXTENDED;
                 break;
             case SDL_SCANCODE_LGUI:
-                if (!isSystemKeyCaptureActive()) {
-                    return;
+                if (m_SwapCmdCtrlKeys) {
+                    // Acting as Left Ctrl; always sent, like Ctrl normally is
+                    keyCode = 0xA2;
                 }
-                keyCode = 0x5B;
-                modifiers |= MODIFIER_EXTENDED;
+                else {
+                    if (!isSystemKeyCaptureActive()) {
+                        return;
+                    }
+                    keyCode = 0x5B;
+                    modifiers |= MODIFIER_EXTENDED;
+                }
                 break;
             case SDL_SCANCODE_RGUI:
-                if (!isSystemKeyCaptureActive()) {
-                    return;
+                if (m_SwapCmdCtrlKeys) {
+                    // Acting as Right Ctrl; always sent, like Ctrl normally is
+                    keyCode = 0xA3;
+                    modifiers |= MODIFIER_EXTENDED;
                 }
-                keyCode = 0x5C;
-                modifiers |= MODIFIER_EXTENDED;
+                else {
+                    if (!isSystemKeyCaptureActive()) {
+                        return;
+                    }
+                    keyCode = 0x5C;
+                    modifiers |= MODIFIER_EXTENDED;
+                }
                 break;
             case SDL_SCANCODE_APPLICATION:
                 keyCode = 0x5D;

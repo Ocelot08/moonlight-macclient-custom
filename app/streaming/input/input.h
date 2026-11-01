@@ -208,6 +208,10 @@ private:
     bool m_GamepadMouse;
     bool m_SwapMouseButtons;
     bool m_ReverseScrollDirection;
+    bool m_SwapCmdCtrlKeys;
+    double m_ScrollSpeedMultiplier;
+    double m_ScrollRemainderX;
+    double m_ScrollRemainderY;
     bool m_SwapFaceButtons;
 
     bool m_NeedsManualCaptureOnLeave;
