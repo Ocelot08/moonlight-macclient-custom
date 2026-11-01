@@ -177,6 +177,20 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
         updateKeyboardGrabState();
         break;
 
+    case KeyComboToggleScrollMode:
+        m_TickBasedScrollMode = !m_TickBasedScrollMode;
+
+        // The two modes accumulate their remainders in different units
+        // (raw WHEEL_DELTA leftover vs notch-fraction leftover), so clear
+        // them out on switch rather than carry over a mismatched value.
+        m_ScrollRemainderX = 0.0;
+        m_ScrollRemainderY = 0.0;
+
+        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
+                    "Detected scroll mode toggle combo: now using %s-based scrolling",
+                    m_TickBasedScrollMode ? "tick" : "amount");
+        break;
+
     default:
         Q_UNREACHABLE();
     }

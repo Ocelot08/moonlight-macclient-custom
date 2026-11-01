@@ -211,14 +211,29 @@ void SdlInputHandler::handleMouseWheelEvent(SDL_MouseWheelEvent* event)
         event->preciseY = SDL_clamp(event->preciseY, -1.0f, 1.0f);
 #endif
 
-        // Apply the user's scroll speed multiplier, accumulating the fractional
-        // remainder so slow scrolling at low multipliers doesn't round down to zero.
-        double scaledDelta = (double)event->preciseY * m_ScrollSpeedMultiplier * 120 + m_ScrollRemainderY; // WHEEL_DELTA
-        short delta = (short)scaledDelta;
-        m_ScrollRemainderY = scaledDelta - delta;
+        if (m_TickBasedScrollMode) {
+            // Throttle how often a full-magnitude WHEEL_DELTA notch is sent, rather
+            // than shrinking each notch's size. Some host applications (e.g. Rhino's
+            // viewport zoom) treat every scroll message as one fixed step regardless
+            // of the delta magnitude inside it, so only a frequency-based approach
+            // has any visible effect there. Toggle with Ctrl+Alt+Shift+R.
+            m_ScrollRemainderY += (double)event->preciseY * m_ScrollSpeedMultiplier;
+            while (m_ScrollRemainderY >= 1.0 || m_ScrollRemainderY <= -1.0) {
+                double notch = m_ScrollRemainderY > 0 ? 1.0 : -1.0;
+                LiSendHighResScrollEvent((short)(notch * 120)); // WHEEL_DELTA
+                m_ScrollRemainderY -= notch;
+            }
+        }
+        else {
+            // Apply the user's scroll speed multiplier, accumulating the fractional
+            // remainder so slow scrolling at low multipliers doesn't round down to zero.
+            double scaledDelta = (double)event->preciseY * m_ScrollSpeedMultiplier * 120 + m_ScrollRemainderY; // WHEEL_DELTA
+            short delta = (short)scaledDelta;
+            m_ScrollRemainderY = scaledDelta - delta;
 
-        if (delta != 0) {
-            LiSendHighResScrollEvent(delta);
+            if (delta != 0) {
+                LiSendHighResScrollEvent(delta);
+            }
         }
     }
 
@@ -234,13 +249,23 @@ void SdlInputHandler::handleMouseWheelEvent(SDL_MouseWheelEvent* event)
         event->preciseX = SDL_clamp(event->preciseX, -1.0f, 1.0f);
 #endif
 
-        // See comment above about the scroll speed multiplier and remainder accumulation
-        double scaledDelta = (double)event->preciseX * m_ScrollSpeedMultiplier * 120 + m_ScrollRemainderX; // WHEEL_DELTA
-        short delta = (short)scaledDelta;
-        m_ScrollRemainderX = scaledDelta - delta;
+        // See comment above about the two scroll modes
+        if (m_TickBasedScrollMode) {
+            m_ScrollRemainderX += (double)event->preciseX * m_ScrollSpeedMultiplier;
+            while (m_ScrollRemainderX >= 1.0 || m_ScrollRemainderX <= -1.0) {
+                double notch = m_ScrollRemainderX > 0 ? 1.0 : -1.0;
+                LiSendHighResHScrollEvent((short)(notch * 120)); // WHEEL_DELTA
+                m_ScrollRemainderX -= notch;
+            }
+        }
+        else {
+            double scaledDelta = (double)event->preciseX * m_ScrollSpeedMultiplier * 120 + m_ScrollRemainderX; // WHEEL_DELTA
+            short delta = (short)scaledDelta;
+            m_ScrollRemainderX = scaledDelta - delta;
 
-        if (delta != 0) {
-            LiSendHighResHScrollEvent(delta);
+            if (delta != 0) {
+                LiSendHighResHScrollEvent(delta);
+            }
         }
     }
 #else
@@ -255,13 +280,23 @@ void SdlInputHandler::handleMouseWheelEvent(SDL_MouseWheelEvent* event)
         event->y = SDL_clamp(event->y, -1, 1);
 #endif
 
-        // See comment above about the scroll speed multiplier and remainder accumulation
-        double scaledDelta = (double)event->y * m_ScrollSpeedMultiplier + m_ScrollRemainderY;
-        signed char delta = (signed char)scaledDelta;
-        m_ScrollRemainderY = scaledDelta - delta;
+        // See comment above about the two scroll modes
+        if (m_TickBasedScrollMode) {
+            m_ScrollRemainderY += (double)event->y * m_ScrollSpeedMultiplier;
+            while (m_ScrollRemainderY >= 1.0 || m_ScrollRemainderY <= -1.0) {
+                int notch = m_ScrollRemainderY > 0 ? 1 : -1;
+                LiSendScrollEvent((signed char)notch);
+                m_ScrollRemainderY -= notch;
+            }
+        }
+        else {
+            double scaledDelta = (double)event->y * m_ScrollSpeedMultiplier + m_ScrollRemainderY;
+            signed char delta = (signed char)scaledDelta;
+            m_ScrollRemainderY = scaledDelta - delta;
 
-        if (delta != 0) {
-            LiSendScrollEvent(delta);
+            if (delta != 0) {
+                LiSendScrollEvent(delta);
+            }
         }
     }
 
@@ -276,13 +311,23 @@ void SdlInputHandler::handleMouseWheelEvent(SDL_MouseWheelEvent* event)
         event->x = SDL_clamp(event->x, -1, 1);
 #endif
 
-        // See comment above about the scroll speed multiplier and remainder accumulation
-        double scaledDelta = (double)event->x * m_ScrollSpeedMultiplier + m_ScrollRemainderX;
-        signed char delta = (signed char)scaledDelta;
-        m_ScrollRemainderX = scaledDelta - delta;
+        // See comment above about the two scroll modes
+        if (m_TickBasedScrollMode) {
+            m_ScrollRemainderX += (double)event->x * m_ScrollSpeedMultiplier;
+            while (m_ScrollRemainderX >= 1.0 || m_ScrollRemainderX <= -1.0) {
+                int notch = m_ScrollRemainderX > 0 ? 1 : -1;
+                LiSendHScrollEvent((signed char)notch);
+                m_ScrollRemainderX -= notch;
+            }
+        }
+        else {
+            double scaledDelta = (double)event->x * m_ScrollSpeedMultiplier + m_ScrollRemainderX;
+            signed char delta = (signed char)scaledDelta;
+            m_ScrollRemainderX = scaledDelta - delta;
 
-        if (delta != 0) {
-            LiSendHScrollEvent(delta);
+            if (delta != 0) {
+                LiSendHScrollEvent(delta);
+            }
         }
     }
 #endif

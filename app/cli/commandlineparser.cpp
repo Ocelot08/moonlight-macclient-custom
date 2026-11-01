@@ -365,6 +365,7 @@ void StreamCommandLineParser::parse(const QStringList &args, StreamingPreference
     parser.addToggleOption("reverse-scroll-direction", "inverted scroll direction");
     parser.addToggleOption("swap-cmd-ctrl", "swap Command and Control keys (macOS)");
     parser.addValueOption("scroll-speed", "scroll speed percentage (10-200)");
+    parser.addToggleOption("tick-based-scrolling", "throttle scroll notch rate instead of scaling notch size (helps apps that ignore wheel delta magnitude, e.g. Rhino3D)");
     parser.addToggleOption("disable-awdl", "disable AWDL while streaming to reduce Wi-Fi stutter (macOS)");
     parser.addToggleOption("swap-gamepad-buttons", "swap A/B and X/Y gamepad buttons (Nintendo-style)");
     parser.addToggleOption("keep-awake", "prevent display sleep while streaming");
@@ -487,6 +488,9 @@ void StreamCommandLineParser::parse(const QStringList &args, StreamingPreference
         int scrollSpeed = parser.getIntOption("scroll-speed");
         preferences->scrollSpeedPercent = scrollSpeed < 10 ? 10 : (scrollSpeed > 200 ? 200 : scrollSpeed);
     }
+
+    // Resolve --tick-based-scrolling and --no-tick-based-scrolling options
+    preferences->tickBasedScrolling = parser.getToggleOptionValue("tick-based-scrolling", preferences->tickBasedScrolling);
 
     // Resolve --disable-awdl and --no-disable-awdl options
     preferences->disableAwdlDuringStream = parser.getToggleOptionValue("disable-awdl", preferences->disableAwdlDuringStream);

@@ -1502,6 +1502,24 @@ Flickable {
                         StreamingPreferences.scrollSpeedPercent = value
                     }
                 }
+
+                CheckBox {
+                    id: tickBasedScrollingCheck
+                    width: parent.width
+                    visible: SystemProperties.isDarwin
+                    text: qsTr("Scroll by throttling clicks instead of scaling them")
+                    font.pointSize: 12
+                    checked: StreamingPreferences.tickBasedScrolling
+                    onCheckedChanged: {
+                        StreamingPreferences.tickBasedScrolling = checked
+                    }
+
+                    ToolTip.delay: 1000
+                    ToolTip.timeout: 10000
+                    ToolTip.visible: hovered
+                    ToolTip.text: qsTr("Some host applications (e.g. Rhino3D's viewport zoom) ignore the scroll amount and only count how often a scroll message arrives, so the speed setting above has no effect on them unless this is enabled.") + " " +
+                                  qsTr("This sets the default when a stream starts; press Ctrl+Alt+Shift+R at any time during a stream to toggle it live.")
+                }
             }
         }
 

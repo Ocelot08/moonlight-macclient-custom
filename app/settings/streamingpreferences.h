@@ -155,6 +155,7 @@ public:
     Q_PROPERTY(bool reverseScrollDirection MEMBER reverseScrollDirection NOTIFY reverseScrollDirectionChanged)
     Q_PROPERTY(bool swapCmdCtrlKeys MEMBER swapCmdCtrlKeys NOTIFY swapCmdCtrlKeysChanged)
     Q_PROPERTY(int scrollSpeedPercent MEMBER scrollSpeedPercent NOTIFY scrollSpeedPercentChanged)
+    Q_PROPERTY(bool tickBasedScrolling MEMBER tickBasedScrolling NOTIFY tickBasedScrollingChanged)
     Q_PROPERTY(bool disableAwdlDuringStream MEMBER disableAwdlDuringStream NOTIFY disableAwdlDuringStreamChanged)
     Q_PROPERTY(bool swapFaceButtons MEMBER swapFaceButtons NOTIFY swapFaceButtonsChanged)
     Q_PROPERTY(bool keepAwake MEMBER keepAwake NOTIFY keepAwakeChanged)
@@ -191,6 +192,7 @@ public:
     bool reverseScrollDirection;
     bool swapCmdCtrlKeys;
     int scrollSpeedPercent;
+    bool tickBasedScrolling;
     bool disableAwdlDuringStream;
     bool swapFaceButtons;
     bool keepAwake;
@@ -241,6 +243,7 @@ signals:
     void reverseScrollDirectionChanged();
     void swapCmdCtrlKeysChanged();
     void scrollSpeedPercentChanged();
+    void tickBasedScrollingChanged();
     void disableAwdlDuringStreamChanged();
     void swapFaceButtonsChanged();
     void captureSysKeysModeChanged();

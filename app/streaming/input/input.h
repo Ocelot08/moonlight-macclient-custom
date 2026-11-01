@@ -168,6 +168,7 @@ private:
         KeyComboTogglePointerRegionLock,
         KeyComboQuitAndExit,
         KeyComboToggleKeyboardGrab,
+        KeyComboToggleScrollMode,
         KeyComboMax
     };
 
@@ -210,6 +211,7 @@ private:
     bool m_ReverseScrollDirection;
     bool m_SwapCmdCtrlKeys;
     double m_ScrollSpeedMultiplier;
+    bool m_TickBasedScrollMode;
     double m_ScrollRemainderX;
     double m_ScrollRemainderY;
     bool m_SwapFaceButtons;

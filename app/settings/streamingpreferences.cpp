@@ -49,6 +49,7 @@
 #define SER_REVERSESCROLL "reversescroll"
 #define SER_SWAPCMDCTRL "swapcmdctrlkeys"
 #define SER_SCROLLSPEED "scrollspeedpercent"
+#define SER_TICKBASEDSCROLLING "tickbasedscrolling"
 #define SER_DISABLEAWDL "disableawdlduringstream"
 #define SER_SWAPFACEBUTTONS "swapfacebuttons"
 #define SER_CAPTURESYSKEYS "capturesyskeys"
@@ -154,6 +155,7 @@ void StreamingPreferences::reload()
     reverseScrollDirection = settings.value(SER_REVERSESCROLL, false).toBool();
     swapCmdCtrlKeys = settings.value(SER_SWAPCMDCTRL, false).toBool();
     scrollSpeedPercent = settings.value(SER_SCROLLSPEED, 100).toInt();
+    tickBasedScrolling = settings.value(SER_TICKBASEDSCROLLING, false).toBool();
     disableAwdlDuringStream = settings.value(SER_DISABLEAWDL, false).toBool();
     swapFaceButtons = settings.value(SER_SWAPFACEBUTTONS, false).toBool();
     keepAwake = settings.value(SER_KEEPAWAKE, true).toBool();
@@ -367,6 +369,7 @@ void StreamingPreferences::save()
     settings.setValue(SER_REVERSESCROLL, reverseScrollDirection);
     settings.setValue(SER_SWAPCMDCTRL, swapCmdCtrlKeys);
     settings.setValue(SER_SCROLLSPEED, scrollSpeedPercent);
+    settings.setValue(SER_TICKBASEDSCROLLING, tickBasedScrolling);
     settings.setValue(SER_DISABLEAWDL, disableAwdlDuringStream);
     settings.setValue(SER_SWAPFACEBUTTONS, swapFaceButtons);
     settings.setValue(SER_CAPTURESYSKEYS, captureSysKeysMode);
