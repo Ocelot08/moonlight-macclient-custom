@@ -46,6 +46,8 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
         // Force raise all keys to ensure they aren't stuck,
         // since we won't get their key up events.
         raiseAllKeys();
+
+        showHotkeyToast(QString("Mouse capture: %1").arg(isCaptureActive() ? "ON" : "OFF"));
         break;
 
     case KeyComboToggleFullScreen:
@@ -56,6 +58,9 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
         // Force raise all keys just be safe across this full-screen/windowed
         // transition just in case key events get lost.
         raiseAllKeys();
+
+        // No public getter for fullscreen state, so just confirm the action happened
+        showHotkeyToast("Full screen toggled");
         break;
 
     case KeyComboToggleStatsOverlay:
@@ -65,6 +70,8 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
         // Toggle the stats overlay
         Session::get()->getOverlayManager().setOverlayState(Overlay::OverlayDebug,
                                                             !Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayDebug));
+
+        showHotkeyToast(QString("Stats overlay: %1").arg(Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayDebug) ? "ON" : "OFF"));
         break;
 
     case KeyComboToggleMouseMode:
@@ -79,6 +86,8 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
 
         // Recapture input
         setCaptureActive(true);
+
+        showHotkeyToast(QString("Absolute mouse mode: %1").arg(m_AbsoluteMouseMode ? "ON" : "OFF"));
         break;
 
     case KeyComboToggleCursorHide:
@@ -88,6 +97,8 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
         if (!SDL_GetRelativeMouseMode()) {
             m_MouseCursorCapturedVisibilityState = !m_MouseCursorCapturedVisibilityState;
             SDL_ShowCursor(m_MouseCursorCapturedVisibilityState);
+
+            showHotkeyToast(QString("Cursor hidden: %1").arg(m_MouseCursorCapturedVisibilityState == SDL_DISABLE ? "ON" : "OFF"));
         }
         else {
             SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
@@ -99,6 +110,10 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
         SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
                     "Detected minimize combo");
         SDL_MinimizeWindow(m_Window);
+
+        // Shown just before the window minimizes, so it likely won't be visible in
+        // practice - included anyway since only the quit combos are excluded.
+        showHotkeyToast("Window minimized");
         break;
 
     case KeyComboPasteText:
@@ -127,10 +142,14 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
 
             // SDL_GetClipboardText() allocates, so we must free
             SDL_free((void*)text);
+
+            showHotkeyToast("Pasted clipboard text");
         }
         else {
             SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
                         "No text in clipboard to paste!");
+
+            showHotkeyToast("No clipboard text to paste");
         }
         break;
     }
@@ -146,6 +165,8 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
 
         // Apply the new region lock
         updatePointerRegionLock();
+
+        showHotkeyToast(QString("Pointer region lock: %1").arg(m_PointerRegionLockActive ? "ON" : "OFF"));
         break;
 
     case KeyComboQuitAndExit:
@@ -175,6 +196,8 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
         }
 
         updateKeyboardGrabState();
+
+        showHotkeyToast(QString("Keyboard grab: %1").arg(isSystemKeyCaptureActive() ? "ON" : "OFF"));
         break;
 
     case KeyComboToggleScrollMode:
@@ -648,19 +671,20 @@ QString SdlInputHandler::buildHotkeyStatusList()
 
     auto onOff = [](bool enabled) { return enabled ? "ON" : "OFF"; };
 
-    lines << "Ctrl+Alt+Shift+Q  Quit";
-    lines << QString("Ctrl+Alt+Shift+Z  Mouse capture: %1").arg(onOff(isCaptureActive()));
-    lines << "Ctrl+Alt+Shift+X  Toggle full screen";
-    lines << QString("Ctrl+Alt+Shift+S  Stats overlay: %1").arg(onOff(Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayDebug)));
-    lines << QString("Ctrl+Alt+Shift+M  Absolute mouse mode: %1").arg(onOff(m_AbsoluteMouseMode));
-    lines << QString("Ctrl+Alt+Shift+C  Cursor hidden: %1").arg(onOff(m_MouseCursorCapturedVisibilityState == SDL_DISABLE));
-    lines << "Ctrl+Alt+Shift+D  Minimize";
-    lines << "Ctrl+Alt+Shift+V  Paste clipboard text";
-    lines << QString("Ctrl+Alt+Shift+L  Pointer region lock: %1").arg(onOff(m_PointerRegionLockActive));
-    lines << "Ctrl+Alt+Shift+E  Quit and exit host app";
-    lines << QString("Ctrl+Alt+Shift+K  Keyboard grab: %1").arg(onOff(isSystemKeyCaptureActive()));
-    lines << QString("Ctrl+Alt+Shift+R  Tick-based scrolling: %1").arg(onOff(m_TickBasedScrollMode));
-    lines << "Ctrl+Alt+Shift+H  Toggle this list";
+    lines << "Hotkeys SHFT+CTRL+ALT:";
+    lines << "Q  Quit";
+    lines << QString("Z  Mouse capture: %1").arg(onOff(isCaptureActive()));
+    lines << "X  Toggle full screen";
+    lines << QString("S  Stats overlay: %1").arg(onOff(Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayDebug)));
+    lines << QString("M  Absolute mouse mode: %1").arg(onOff(m_AbsoluteMouseMode));
+    lines << QString("C  Cursor hidden: %1").arg(onOff(m_MouseCursorCapturedVisibilityState == SDL_DISABLE));
+    lines << "D  Minimize";
+    lines << "V  Paste clipboard text";
+    lines << QString("L  Pointer region lock: %1").arg(onOff(m_PointerRegionLockActive));
+    lines << "E  Quit and exit host app";
+    lines << QString("K  Keyboard grab: %1").arg(onOff(isSystemKeyCaptureActive()));
+    lines << QString("R  Tick-based scrolling: %1").arg(onOff(m_TickBasedScrollMode));
+    lines << "H  Toggle this list";
 
     return lines.join('\n');
 }
