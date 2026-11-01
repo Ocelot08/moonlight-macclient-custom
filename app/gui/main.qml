@@ -22,9 +22,10 @@ ApplicationWindow {
     width: 1280
     height: 600
 
-    // A bit darker than the "#303030" background used on this screen, so this
-    // custom build is visually distinguishable from a stock Moonlight build.
-    Material.accent: "#242424"
+    // Material.primary controls the ToolBar/header background. A bit darker
+    // than the "#303030" app background, so this custom build is visually
+    // distinguishable from a stock Moonlight build.
+    Material.primary: "#242424"
 
     // This function runs prior to creation of the initial StackView item
     function doEarlyInit() {
