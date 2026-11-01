@@ -22,6 +22,10 @@ ApplicationWindow {
     width: 1280
     height: 600
 
+    // A bit darker than the "#303030" background used on this screen, so this
+    // custom build is visually distinguishable from a stock Moonlight build.
+    Material.accent: "#242424"
+
     // This function runs prior to creation of the initial StackView item
     function doEarlyInit() {
         // Override the background color to Material 2 colors for Qt 6.5+
