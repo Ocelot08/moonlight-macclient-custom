@@ -704,9 +704,14 @@ class PendingRunCommandOnlyTask : public QObject, public QRunnable
     Q_OBJECT
 
 public:
-    PendingRunCommandOnlyTask(ComputerManager* computerManager, NvComputer* computer, int appId)
+    PendingRunCommandOnlyTask(ComputerManager* computerManager, NvComputer* computer, int appId,
+                              int width, int height, int fps, int bitrateKbps)
         : m_Computer(computer),
-          m_AppId(appId)
+          m_AppId(appId),
+          m_Width(width),
+          m_Height(height),
+          m_Fps(fps),
+          m_BitrateKbps(bitrateKbps)
     {
         connect(this, &PendingRunCommandOnlyTask::runCommandOnlyFailed,
                 computerManager, &ComputerManager::runAppCommandOnlyCompleted);
@@ -718,15 +723,19 @@ signals:
 private:
     void run()
     {
-        // These values are never used for a real stream (we never connect over RTSP),
-        // so any valid-looking values are fine. We only need the host to accept the
-        // /launch (or /resume) request so it runs the app's prep-cmd/cmd.
+        // We never connect over RTSP, so none of this configures a real stream.
+        // But some hosts (notably Apollo/Vibepollo's virtual display feature)
+        // resize or recreate a display to match the requested mode as part of
+        // handling /launch itself, regardless of the sops flag below. Using the
+        // same width/height/fps the user already streams at avoids that turning
+        // into a surprise resolution change - at worst, it matches what they'd
+        // see if they'd started a normal stream anyway.
         STREAM_CONFIGURATION streamConfig;
         LiInitializeStreamConfiguration(&streamConfig);
-        streamConfig.width = 1280;
-        streamConfig.height = 720;
-        streamConfig.fps = 30;
-        streamConfig.bitrate = 10000;
+        streamConfig.width = m_Width;
+        streamConfig.height = m_Height;
+        streamConfig.fps = m_Fps;
+        streamConfig.bitrate = m_BitrateKbps;
         streamConfig.packetSize = 1024;
         streamConfig.streamingRemotely = STREAM_CFG_AUTO;
         streamConfig.audioConfiguration = AUDIO_CONFIGURATION_STEREO;
@@ -794,11 +803,17 @@ private:
 
     NvComputer* m_Computer;
     int m_AppId;
+    int m_Width;
+    int m_Height;
+    int m_Fps;
+    int m_BitrateKbps;
 };
 
 void ComputerManager::runAppCommandOnly(NvComputer* computer, int appId)
 {
-    PendingRunCommandOnlyTask* task = new PendingRunCommandOnlyTask(this, computer, appId);
+    PendingRunCommandOnlyTask* task = new PendingRunCommandOnlyTask(this, computer, appId,
+                                                                     m_Prefs->width, m_Prefs->height,
+                                                                     m_Prefs->fps, m_Prefs->bitrateKbps);
     QThreadPool::globalInstance()->start(task);
 }
 
