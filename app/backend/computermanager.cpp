@@ -744,8 +744,23 @@ private:
         NvHTTP http(m_Computer);
         QString rtspSessionUrl;
 
+        // If a game or another command-only app is already running, quit it first
+        // so that session ends cleanly before we trigger the new command, rather
+        // than yanking it out from under the user (e.g. when the new command
+        // suspends the host). This is a best-effort attempt: if it fails, we still
+        // try to launch below, and any resulting host error is reported normally.
+        if (m_Computer->currentGameId != 0) {
+            try {
+                http.quitApp();
+            } catch (const GfeHttpResponseException&) {
+            } catch (const QtNetworkReplyException&) {
+            }
+        }
+
         try {
-            http.startApp(m_Computer->currentGameId != 0 ? "resume" : "launch",
+            // We always use "launch" rather than "resume" here, since we just
+            // ensured above that nothing should still be running.
+            http.startApp("launch",
                           m_Computer->isNvidiaServerSoftware,
                           m_AppId,
                           &streamConfig,
