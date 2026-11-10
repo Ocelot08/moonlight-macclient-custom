@@ -235,6 +235,11 @@ public:
 
     void quitRunningApp(NvComputer* computer);
 
+    // Tells the host to launch the given app's command (prep-cmd/cmd), without ever
+    // establishing the actual A/V stream. Useful for host apps set up purely to run
+    // a script (such as putting the host to sleep) rather than an actual game.
+    void runAppCommandOnly(NvComputer* computer, int appId);
+
     QVector<NvComputer*> getComputers();
 
     // computer is deleted inside this call
@@ -252,6 +257,8 @@ signals:
     void computerAddCompleted(QVariant success, QVariant detectedPortBlocking);
 
     void quitAppCompleted(QVariant error);
+
+    void runAppCommandOnlyCompleted(QVariant error);
 
 private slots:
     void handleAboutToQuit();

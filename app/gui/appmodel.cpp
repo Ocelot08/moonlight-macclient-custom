@@ -118,6 +118,14 @@ void AppModel::quitRunningApp()
     m_ComputerManager->quitRunningApp(m_Computer);
 }
 
+void AppModel::runAppCommandOnly(int appIndex)
+{
+    Q_ASSERT(appIndex < m_VisibleApps.count());
+    NvApp app = m_VisibleApps.at(appIndex);
+
+    m_ComputerManager->runAppCommandOnly(m_Computer, app.id);
+}
+
 bool AppModel::isAppCurrentlyVisible(const NvApp& app)
 {
     for (const NvApp& visibleApp : std::as_const(m_VisibleApps)) {

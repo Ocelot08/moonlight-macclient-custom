@@ -305,6 +305,19 @@ CenteredGridView {
                     visible: model.running
                 }
                 NavigableMenuItem {
+                    text: qsTr("Run Command (No Stream)")
+                    onTriggered: {
+                        runCommandOnlyDialog.appName = model.name
+                        runCommandOnlyDialog.appIndex = index
+                        runCommandOnlyDialog.open()
+                    }
+
+                    ToolTip.text: qsTr("Sends the launch command to the host without opening a stream. Only useful for a host app set up to run a script (such as putting the host to sleep) instead of an actual game.")
+                    ToolTip.delay: 1000
+                    ToolTip.timeout: 8000
+                    ToolTip.visible: hovered
+                }
+                NavigableMenuItem {
                     checkable: true
                     checked: model.directLaunch
                     text: qsTr("Direct Launch")
@@ -372,6 +385,16 @@ CenteredGridView {
         }
 
         onAccepted: quitApp()
+    }
+
+    NavigableMessageDialog {
+        id: runCommandOnlyDialog
+        property string appName: ""
+        property int appIndex: -1
+        text: qsTr("Run %1's command on the host without opening a stream?").arg(appName)
+        standardButtons: Dialog.Yes | Dialog.No
+
+        onAccepted: appModel.runAppCommandOnly(appIndex)
     }
 
     ScrollBar.vertical: ScrollBar {}

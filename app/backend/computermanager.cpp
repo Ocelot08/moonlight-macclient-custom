@@ -699,6 +699,94 @@ void ComputerManager::quitRunningApp(NvComputer* computer)
     QThreadPool::globalInstance()->start(quit);
 }
 
+class PendingRunCommandOnlyTask : public QObject, public QRunnable
+{
+    Q_OBJECT
+
+public:
+    PendingRunCommandOnlyTask(ComputerManager* computerManager, NvComputer* computer, int appId)
+        : m_Computer(computer),
+          m_AppId(appId)
+    {
+        connect(this, &PendingRunCommandOnlyTask::runCommandOnlyFailed,
+                computerManager, &ComputerManager::runAppCommandOnlyCompleted);
+    }
+
+signals:
+    void runCommandOnlyFailed(QString error);
+
+private:
+    void run()
+    {
+        // These values are never used for a real stream (we never connect over RTSP),
+        // so any valid-looking values are fine. We only need the host to accept the
+        // /launch (or /resume) request so it runs the app's prep-cmd/cmd.
+        STREAM_CONFIGURATION streamConfig;
+        LiInitializeStreamConfiguration(&streamConfig);
+        streamConfig.width = 1280;
+        streamConfig.height = 720;
+        streamConfig.fps = 30;
+        streamConfig.bitrate = 10000;
+        streamConfig.packetSize = 1024;
+        streamConfig.streamingRemotely = STREAM_CFG_AUTO;
+        streamConfig.audioConfiguration = AUDIO_CONFIGURATION_STEREO;
+        streamConfig.supportedVideoFormats = VIDEO_FORMAT_H264;
+        streamConfig.encryptionFlags = ENCFLG_ALL;
+
+        QRandomGenerator* rng = QRandomGenerator::system();
+        for (size_t i = 0; i < sizeof(streamConfig.remoteInputAesKey); i++) {
+            streamConfig.remoteInputAesKey[i] = (char)rng->generate();
+        }
+        for (size_t i = 0; i < sizeof(streamConfig.remoteInputAesIv); i++) {
+            streamConfig.remoteInputAesIv[i] = (char)rng->generate();
+        }
+
+        NvHTTP http(m_Computer);
+        QString rtspSessionUrl;
+
+        try {
+            http.startApp(m_Computer->currentGameId != 0 ? "resume" : "launch",
+                          m_Computer->isNvidiaServerSoftware,
+                          m_AppId,
+                          &streamConfig,
+                          false /* sops */,
+                          false /* localAudio */,
+                          0 /* gamepadMask */,
+                          true /* persistGameControllersOnDisconnect */,
+                          rtspSessionUrl);
+        } catch (const GfeHttpResponseException& e) {
+            emit runCommandOnlyFailed(e.toQString());
+            return;
+        } catch (const QtNetworkReplyException& e) {
+            emit runCommandOnlyFailed(e.toQString());
+            return;
+        }
+
+        // Give the host's app command a moment to actually run (e.g. to issue a
+        // sleep request) before we tear the launched session back down. We never
+        // open a stream, so there's nothing else here worth waiting for.
+        QThread::msleep(2000);
+
+        // Best-effort cleanup so the host doesn't consider this app "running"
+        // indefinitely. If the command made the host unreachable (as a sleep
+        // command would), this will simply fail, which is expected.
+        try {
+            http.quitApp();
+        } catch (const GfeHttpResponseException&) {
+        } catch (const QtNetworkReplyException&) {
+        }
+    }
+
+    NvComputer* m_Computer;
+    int m_AppId;
+};
+
+void ComputerManager::runAppCommandOnly(NvComputer* computer, int appId)
+{
+    PendingRunCommandOnlyTask* task = new PendingRunCommandOnlyTask(this, computer, appId);
+    QThreadPool::globalInstance()->start(task);
+}
+
 void ComputerManager::stopPollingAsync()
 {
     QWriteLocker lock(&m_Lock);

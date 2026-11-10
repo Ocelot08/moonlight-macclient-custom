@@ -37,6 +37,8 @@ public:
 
     Q_INVOKABLE void quitRunningApp();
 
+    Q_INVOKABLE void runAppCommandOnly(int appIndex);
+
     Q_INVOKABLE void setAppHidden(int appIndex, bool hidden);
 
     Q_INVOKABLE void setAppDirectLaunch(int appIndex, bool directLaunch);
