@@ -33,6 +33,7 @@ CenteredGridView {
     StackView.onActivated: {
         // Setup signals on CM
         ComputerManager.computerAddCompleted.connect(addComplete)
+        ComputerManager.runAppCommandOnlyCompleted.connect(sleepFailed)
 
         // Highlight the first item if a gamepad is connected
         if (currentIndex === -1 && SdlGamepadKeyNavigation.getConnectedGamepads() > 0) {
@@ -42,6 +43,7 @@ CenteredGridView {
 
     StackView.onDeactivating: {
         ComputerManager.computerAddCompleted.disconnect(addComplete)
+        ComputerManager.runAppCommandOnlyCompleted.disconnect(sleepFailed)
     }
 
     function pairingComplete(error)
@@ -55,6 +57,13 @@ CenteredGridView {
             errorDialog.helpText = ""
             errorDialog.open()
         }
+    }
+
+    function sleepFailed(error)
+    {
+        errorDialog.text = error
+        errorDialog.helpText = ""
+        errorDialog.open()
     }
 
     function addComplete(success, detectedPortBlocking)
@@ -79,6 +88,7 @@ CenteredGridView {
         model.initialize(ComputerManager)
         model.pairingCompleted.connect(pairingComplete)
         model.connectionTestCompleted.connect(testConnectionDialog.connectionTestComplete)
+        model.sleepComputerFailed.connect(sleepFailed)
         return model
     }
 
@@ -184,6 +194,20 @@ CenteredGridView {
                     text: qsTr("Wake PC")
                     onTriggered: computerModel.wakeComputer(index)
                     visible: !model.online && model.wakeable
+                }
+                NavigableMenuItem {
+                    text: qsTr("Sleep PC")
+                    onTriggered: {
+                        sleepPcDialog.pcIndex = index
+                        sleepPcDialog.pcName = model.name
+                        sleepPcDialog.open()
+                    }
+                    visible: model.online && model.paired
+
+                    ToolTip.text: qsTr("Closes any running stream, then runs a host app named \"Sleep\" to put %1 to sleep.").arg(model.name)
+                    ToolTip.delay: 1000
+                    ToolTip.timeout: 5000
+                    ToolTip.visible: hovered
                 }
                 NavigableMenuItem {
                     text: qsTr("Test Network")
@@ -299,6 +323,18 @@ CenteredGridView {
         standardButtons: Dialog.Cancel
         onRejected: {
             // FIXME: We should interrupt pairing here
+        }
+    }
+
+    NavigableMessageDialog {
+        id: sleepPcDialog
+        property int pcIndex : -1
+        property string pcName : ""
+        text: qsTr("Put '%1' to sleep? Any running stream will be closed first.").arg(pcName)
+        standardButtons: Dialog.Yes | Dialog.No
+
+        onAccepted: {
+            computerModel.sleepComputer(pcIndex)
         }
     }
 

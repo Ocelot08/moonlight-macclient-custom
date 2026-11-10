@@ -134,6 +134,27 @@ Session* ComputerModel::createSessionForCurrentGame(int computerIndex)
     return nullptr;
 }
 
+void ComputerModel::sleepComputer(int computerIndex)
+{
+    Q_ASSERT(computerIndex < m_Computers.count());
+    NvComputer* computer = m_Computers[computerIndex];
+
+    int sleepAppId = 0;
+    for (const NvApp& app : std::as_const(computer->appList)) {
+        if (app.name.compare("Sleep", Qt::CaseInsensitive) == 0) {
+            sleepAppId = app.id;
+            break;
+        }
+    }
+
+    if (sleepAppId == 0) {
+        emit sleepComputerFailed(tr("No app named \"Sleep\" was found on %1. Set up a host app with that name to use this.").arg(computer->name));
+        return;
+    }
+
+    m_ComputerManager->runAppCommandOnly(computer, sleepAppId);
+}
+
 void ComputerModel::deleteComputer(int computerIndex)
 {
     Q_ASSERT(computerIndex < m_Computers.count());

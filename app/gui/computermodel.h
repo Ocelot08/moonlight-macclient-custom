@@ -45,9 +45,15 @@ public:
 
     Q_INVOKABLE Session* createSessionForCurrentGame(int computerIndex);
 
+    // Looks for a host app named "Sleep" and, if found, runs it without
+    // streaming (see ComputerManager::runAppCommandOnly). Emits
+    // sleepComputerFailed if no such app exists.
+    Q_INVOKABLE void sleepComputer(int computerIndex);
+
 signals:
     void pairingCompleted(QVariant error);
     void connectionTestCompleted(int result, QString blockedPorts);
+    void sleepComputerFailed(QString error);
 
 private slots:
     void handleComputerStateChanged(NvComputer* computer);
