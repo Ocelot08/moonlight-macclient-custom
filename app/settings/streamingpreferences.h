@@ -18,6 +18,13 @@ public:
 
     void reload();
 
+    // A fresh, independent preferences snapshot (loaded from the same persisted
+    // settings as the shared instance via get()), for a caller that wants to
+    // override a setting for one-off use (such as a single session) without
+    // touching the shared instance that the Settings UI is bound to, and
+    // without ever calling save() on it.
+    static StreamingPreferences* createTransientCopy();
+
     enum AudioConfig
     {
         AC_STEREO,

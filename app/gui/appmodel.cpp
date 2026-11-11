@@ -39,12 +39,28 @@ QString AppModel::getRunningAppName()
     return nullptr;
 }
 
-Session* AppModel::createSessionForApp(int appIndex)
+Session* AppModel::createSessionForApp(int appIndex, bool forceWindowed)
 {
     Q_ASSERT(appIndex < m_VisibleApps.count());
     NvApp app = m_VisibleApps.at(appIndex);
 
-    return new Session(m_Computer, app);
+    if (!forceWindowed) {
+        return new Session(m_Computer, app);
+    }
+
+    // Create a one-off, unsaved copy of the current preferences with windowed
+    // mode forced on, so this session runs windowed without touching the
+    // user's persisted window mode setting or the shared preferences object
+    // the Settings page is bound to.
+    StreamingPreferences* windowedPrefs = StreamingPreferences::createTransientCopy();
+    windowedPrefs->windowMode = StreamingPreferences::WM_WINDOWED;
+
+    Session* session = new Session(m_Computer, app, windowedPrefs);
+
+    // Tie the temporary preferences object's lifetime to the session.
+    windowedPrefs->setParent(session);
+
+    return session;
 }
 
 int AppModel::getDirectLaunchAppIndex()

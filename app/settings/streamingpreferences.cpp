@@ -69,6 +69,15 @@ StreamingPreferences::StreamingPreferences(QQmlEngine *qmlEngine)
     reload();
 }
 
+StreamingPreferences* StreamingPreferences::createTransientCopy()
+{
+    // The constructor already loads every field from the same persisted
+    // settings get() reads from, so this is a snapshot of the current
+    // settings with no QML engine attached, independent of the shared
+    // instance. The caller owns it and should never call save() on it.
+    return new StreamingPreferences(nullptr);
+}
+
 StreamingPreferences* StreamingPreferences::get(QQmlEngine *qmlEngine)
 {
     {
