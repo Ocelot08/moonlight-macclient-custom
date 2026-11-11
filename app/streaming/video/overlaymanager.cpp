@@ -133,8 +133,24 @@ SDL_Color OverlayManager::getOverlayColor(OverlayType type)
 
 void OverlayManager::setOverlayRenderer(IOverlayRenderer* renderer)
 {
-    QWriteLocker lock(&m_OverlayRendererLock);
-    m_Renderer = renderer;
+    {
+        QWriteLocker lock(&m_OverlayRendererLock);
+        m_Renderer = renderer;
+    }
+
+    // notifyOverlayUpdated() is a no-op whenever m_Renderer is still null, with
+    // nothing re-triggering it once a renderer does show up - so any overlay
+    // enabled before the renderer was registered (for example one enabled up
+    // front at session start, rather than toggled live by a hotkey after
+    // streaming is already underway) would otherwise never actually render.
+    // Replay every currently-enabled overlay now that we have one to catch up.
+    if (renderer != nullptr) {
+        for (int i = 0; i < OverlayType::OverlayMax; i++) {
+            if (m_Overlays[i].enabled) {
+                notifyOverlayUpdated((OverlayType)i);
+            }
+        }
+    }
 }
 
 void OverlayManager::notifyOverlayUpdated(OverlayType type)
