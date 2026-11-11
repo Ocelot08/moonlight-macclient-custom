@@ -1990,6 +1990,14 @@ void Session::exec()
     // Toggle the stats overlay if requested by the user
     m_OverlayManager.setOverlayState(Overlay::OverlayDebug, m_Preferences->showPerformanceOverlay);
 
+    // Remind the user how to release their mouse from the stream window if
+    // we're running windowed, since that's the one case people get surprised
+    // by it. Unlike the toast/list overlays, this isn't user-toggled - it's
+    // just visible for the whole session whenever we're windowed.
+    m_OverlayManager.updateOverlayText(Overlay::OverlayWindowModeHint,
+                                       "Ctrl+Alt+Shift+Z releases your mouse from this window");
+    m_OverlayManager.setOverlayState(Overlay::OverlayWindowModeHint, !m_IsFullScreen);
+
     // Switch to async logging mode when we enter the SDL loop
     StreamUtils::enterAsyncLoggingMode();
 

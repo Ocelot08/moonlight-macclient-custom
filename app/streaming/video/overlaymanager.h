@@ -13,6 +13,7 @@ enum OverlayType {
     OverlayStatusUpdate,
     OverlayHotkeyToast,
     OverlayHotkeyList,
+    OverlayWindowModeHint,
     OverlayMax
 };
 

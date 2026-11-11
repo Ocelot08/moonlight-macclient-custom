@@ -1059,6 +1059,11 @@ void PlVkRenderer::renderFrame(AVFrame *frame)
                 overlayParts[i].dst.x0 = SDL_max(0, targetFrame.crop.x1 - overlayParts[i].src.x1);
                 overlayParts[i].dst.y0 = 0;
             }
+            else if (i == Overlay::OverlayWindowModeHint) {
+                // Bottom center (the four corners are already used above)
+                overlayParts[i].dst.x0 = SDL_max(0, (targetFrame.crop.x1 - overlayParts[i].src.x1) / 2);
+                overlayParts[i].dst.y0 = SDL_max(0, targetFrame.crop.y1 - overlayParts[i].src.y1);
+            }
             overlayParts[i].dst.x1 = overlayParts[i].dst.x0 + overlayParts[i].src.x1;
             overlayParts[i].dst.y1 = overlayParts[i].dst.y0 + overlayParts[i].src.y1;
 

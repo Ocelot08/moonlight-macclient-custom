@@ -29,6 +29,12 @@ OverlayManager::OverlayManager() :
     m_Overlays[OverlayType::OverlayHotkeyList].fontSize = 28;
     m_Overlays[OverlayType::OverlayHotkeyList].fixedWidth = HOTKEY_OVERLAY_FIXED_WIDTH;
 
+    // Unlike the toast/list above, this one only ever shows one fixed piece of
+    // text while visible, so there's no "jumping" concern to size against -
+    // tightening to content (fixedWidth left at 0) is fine.
+    m_Overlays[OverlayType::OverlayWindowModeHint].color = {0xFF, 0xFF, 0xFF, 0xFF};
+    m_Overlays[OverlayType::OverlayWindowModeHint].fontSize = 20;
+
     // While TTF will usually not be initialized here, it is valid for that not to
     // be the case, since Session destruction is deferred and could overlap with
     // the lifetime of a new Session object.

@@ -420,6 +420,9 @@ public:
                 // overlay types today (pre-existing limitation), only horizontal.
                 [m_OverlayTextFields[type] setAlignment:NSTextAlignmentRight];
                 break;
+            case Overlay::OverlayWindowModeHint:
+                [m_OverlayTextFields[type] setAlignment:NSTextAlignmentCenter];
+                break;
             default:
                 break;
             }

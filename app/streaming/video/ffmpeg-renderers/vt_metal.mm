@@ -548,6 +548,12 @@ public:
                     renderRect.x = m_LastDrawableWidth - overlayTexture.width;
                     renderRect.y = m_LastDrawableHeight - overlayTexture.height;
                 }
+                else if (i == Overlay::OverlayWindowModeHint) {
+                    // Bottom center (the four corners are already used above).
+                    // Note y=0 is the bottom edge in this renderer's convention.
+                    renderRect.x = (m_LastDrawableWidth - overlayTexture.width) / 2;
+                    renderRect.y = 0;
+                }
 
                 renderRect.w = overlayTexture.width;
                 renderRect.h = overlayTexture.height;
