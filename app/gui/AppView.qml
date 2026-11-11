@@ -305,11 +305,10 @@ CenteredGridView {
                     onTriggered: launchOrResumeSelectedApp(true)
                 }
                 NavigableMenuItem {
-                    text: qsTr("Open in Window")
+                    text: model.running ? qsTr("Resume in Window") : qsTr("Open in Window")
                     onTriggered: launchOrResumeSelectedApp(true, true)
-                    visible: !model.running
 
-                    ToolTip.text: qsTr("Launches this app in a window instead of full screen, just for this one session. Your regular full screen/windowed setting is unchanged for next time.")
+                    ToolTip.text: qsTr("Opens this app in a window instead of full screen, just for this one session. Your regular full screen/windowed setting is unchanged for next time.")
                     ToolTip.delay: 1000
                     ToolTip.timeout: 8000
                     ToolTip.visible: hovered
