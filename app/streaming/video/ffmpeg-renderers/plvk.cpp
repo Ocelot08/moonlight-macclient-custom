@@ -1050,9 +1050,11 @@ void PlVkRenderer::renderFrame(AVFrame *frame)
                 overlayParts[i].dst.y0 = 0;
             }
             else if (i == Overlay::OverlayHotkeyToast) {
-                // Bottom right
+                // Bottom right, stacked above the persistent window-mode hint below it (if showing)
+                int reservedBelow = m_Overlays[Overlay::OverlayWindowModeHint].hasOverlay ?
+                                        m_Overlays[Overlay::OverlayWindowModeHint].overlay.tex->params.h : 0;
                 overlayParts[i].dst.x0 = SDL_max(0, targetFrame.crop.x1 - overlayParts[i].src.x1);
-                overlayParts[i].dst.y0 = SDL_max(0, targetFrame.crop.y1 - overlayParts[i].src.y1);
+                overlayParts[i].dst.y0 = SDL_max(0, targetFrame.crop.y1 - overlayParts[i].src.y1 - reservedBelow);
             }
             else if (i == Overlay::OverlayHotkeyList) {
                 // Top right
@@ -1060,8 +1062,8 @@ void PlVkRenderer::renderFrame(AVFrame *frame)
                 overlayParts[i].dst.y0 = 0;
             }
             else if (i == Overlay::OverlayWindowModeHint) {
-                // Bottom center (the four corners are already used above)
-                overlayParts[i].dst.x0 = SDL_max(0, (targetFrame.crop.x1 - overlayParts[i].src.x1) / 2);
+                // Bottom right, flush to the corner - the toast above reserves space for it
+                overlayParts[i].dst.x0 = SDL_max(0, targetFrame.crop.x1 - overlayParts[i].src.x1);
                 overlayParts[i].dst.y0 = SDL_max(0, targetFrame.crop.y1 - overlayParts[i].src.y1);
             }
             overlayParts[i].dst.x1 = overlayParts[i].dst.x0 + overlayParts[i].src.x1;

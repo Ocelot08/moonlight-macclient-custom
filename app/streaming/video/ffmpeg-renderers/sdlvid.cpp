@@ -247,11 +247,13 @@ void SdlRenderer::renderOverlay(Overlay::OverlayType type)
                 m_OverlayRects[type].y = 0;
             }
             else if (type == Overlay::OverlayHotkeyToast) {
-                // Bottom right
+                // Bottom right, stacked above the persistent window-mode hint below it (if showing)
                 SDL_Rect viewportRect;
                 SDL_RenderGetViewport(m_Renderer, &viewportRect);
+                int reservedBelow = Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayWindowModeHint) ?
+                                        m_OverlayRects[Overlay::OverlayWindowModeHint].h : 0;
                 m_OverlayRects[type].x = viewportRect.w - newSurface->w;
-                m_OverlayRects[type].y = viewportRect.h - newSurface->h;
+                m_OverlayRects[type].y = viewportRect.h - newSurface->h - reservedBelow;
             }
             else if (type == Overlay::OverlayHotkeyList) {
                 // Top right
@@ -261,10 +263,10 @@ void SdlRenderer::renderOverlay(Overlay::OverlayType type)
                 m_OverlayRects[type].y = 0;
             }
             else if (type == Overlay::OverlayWindowModeHint) {
-                // Bottom center (the four corners are already used above)
+                // Bottom right, flush to the corner - the toast above reserves space for it
                 SDL_Rect viewportRect;
                 SDL_RenderGetViewport(m_Renderer, &viewportRect);
-                m_OverlayRects[type].x = (viewportRect.w - newSurface->w) / 2;
+                m_OverlayRects[type].x = viewportRect.w - newSurface->w;
                 m_OverlayRects[type].y = viewportRect.h - newSurface->h;
             }
 

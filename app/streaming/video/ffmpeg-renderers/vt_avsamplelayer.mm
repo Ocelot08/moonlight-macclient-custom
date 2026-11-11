@@ -416,12 +416,10 @@ public:
             case Overlay::OverlayStatusUpdate:
             case Overlay::OverlayHotkeyToast:
             case Overlay::OverlayHotkeyList:
+            case Overlay::OverlayWindowModeHint:
                 // NB: This renderer doesn't distinguish vertical position between
                 // overlay types today (pre-existing limitation), only horizontal.
                 [m_OverlayTextFields[type] setAlignment:NSTextAlignmentRight];
-                break;
-            case Overlay::OverlayWindowModeHint:
-                [m_OverlayTextFields[type] setAlignment:NSTextAlignmentCenter];
                 break;
             default:
                 break;

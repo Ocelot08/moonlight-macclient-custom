@@ -539,9 +539,11 @@ public:
                     renderRect.y = m_LastDrawableHeight - overlayTexture.height;
                 }
                 else if (i == Overlay::OverlayHotkeyToast) {
-                    // Bottom right
+                    // Bottom right, stacked above the persistent window-mode hint below it
+                    // (if showing). Note y=0 is the bottom edge in this renderer's convention.
                     renderRect.x = m_LastDrawableWidth - overlayTexture.width;
-                    renderRect.y = 0;
+                    renderRect.y = (m_OverlayTextures[Overlay::OverlayWindowModeHint] != nullptr) ?
+                                        m_OverlayTextures[Overlay::OverlayWindowModeHint].height : 0;
                 }
                 else if (i == Overlay::OverlayHotkeyList) {
                     // Top right
@@ -549,9 +551,8 @@ public:
                     renderRect.y = m_LastDrawableHeight - overlayTexture.height;
                 }
                 else if (i == Overlay::OverlayWindowModeHint) {
-                    // Bottom center (the four corners are already used above).
-                    // Note y=0 is the bottom edge in this renderer's convention.
-                    renderRect.x = (m_LastDrawableWidth - overlayTexture.width) / 2;
+                    // Bottom right, flush to the corner - the toast above reserves space for it
+                    renderRect.x = m_LastDrawableWidth - overlayTexture.width;
                     renderRect.y = 0;
                 }
 
