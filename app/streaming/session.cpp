@@ -1594,6 +1594,31 @@ public:
 // Called in a non-main thread
 bool Session::startConnectionAsync()
 {
+#ifdef Q_OS_DARWIN
+    // Disable AWDL if requested, before any stream traffic starts flowing (including
+    // the HTTP launch request just below and LiStartConnection() further down) rather
+    // than after the SDL window is already up in exec(). macOS periodically scans for
+    // AWDL peers (AirDrop, AirPlay, Handoff, etc), which can cause brief Wi-Fi
+    // interruptions and stream stutter - previously that scanning was only disabled
+    // well after the stream had already started, so the first stretch of streaming
+    // (until the next scan would have hit anyway) still had to ride it out. This
+    // requires a passwordless sudo rule for these exact commands (e.g. in
+    // /etc/sudoers.d/) or it will silently fail rather than block startup. This also
+    // now runs on this background connection thread rather than blocking the main
+    // thread inside exec().
+    if (m_Preferences->disableAwdlDuringStream) {
+        int ret = QProcess::execute("/usr/bin/sudo", {"-n", "/sbin/ifconfig", "awdl0", "down"});
+        if (ret == 0) {
+            m_DisabledAwdl = true;
+        }
+        else {
+            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
+                        "Failed to disable AWDL (exit code %d). Is passwordless sudo configured for ifconfig awdl0?",
+                        ret);
+        }
+    }
+#endif
+
     // The UI should have ensured the old game was already quit
     // if we decide to stream a different game.
     Q_ASSERT(m_Computer->currentGameId == 0 ||
@@ -1949,24 +1974,6 @@ void Session::exec()
     if (m_Preferences->keepAwake) {
         SDL_DisableScreenSaver();
     }
-
-#ifdef Q_OS_DARWIN
-    // Disable AWDL if requested. macOS periodically scans for AWDL peers (AirDrop,
-    // AirPlay, Handoff, etc) which can cause brief Wi-Fi interruptions and stream
-    // stutter. This requires a passwordless sudo rule for these exact commands
-    // (e.g. in /etc/sudoers.d/) or it will silently fail rather than block startup.
-    if (m_Preferences->disableAwdlDuringStream) {
-        int ret = QProcess::execute("/usr/bin/sudo", {"-n", "/sbin/ifconfig", "awdl0", "down"});
-        if (ret == 0) {
-            m_DisabledAwdl = true;
-        }
-        else {
-            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
-                        "Failed to disable AWDL (exit code %d). Is passwordless sudo configured for ifconfig awdl0?",
-                        ret);
-        }
-    }
-#endif
 
     // Hide Qt's fake mouse cursor on EGLFS systems
     if (QGuiApplication::platformName() == "eglfs") {
