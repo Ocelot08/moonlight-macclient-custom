@@ -51,6 +51,7 @@
 #define SER_SCROLLSPEED "scrollspeedpercent"
 #define SER_TICKBASEDSCROLLING "tickbasedscrolling"
 #define SER_DISABLEAWDL "disableawdlduringstream"
+#define SER_SHOWBATTERYOVERLAY "showbatteryoverlay"
 #define SER_SWAPFACEBUTTONS "swapfacebuttons"
 #define SER_CAPTURESYSKEYS "capturesyskeys"
 #define SER_KEEPAWAKE "keepawake"
@@ -166,6 +167,7 @@ void StreamingPreferences::reload()
     scrollSpeedPercent = settings.value(SER_SCROLLSPEED, 100).toInt();
     tickBasedScrolling = settings.value(SER_TICKBASEDSCROLLING, false).toBool();
     disableAwdlDuringStream = settings.value(SER_DISABLEAWDL, false).toBool();
+    showBatteryOverlay = settings.value(SER_SHOWBATTERYOVERLAY, true).toBool();
     swapFaceButtons = settings.value(SER_SWAPFACEBUTTONS, false).toBool();
     keepAwake = settings.value(SER_KEEPAWAKE, true).toBool();
     enableHdr = settings.value(SER_HDR, false).toBool();
@@ -380,6 +382,7 @@ void StreamingPreferences::save()
     settings.setValue(SER_SCROLLSPEED, scrollSpeedPercent);
     settings.setValue(SER_TICKBASEDSCROLLING, tickBasedScrolling);
     settings.setValue(SER_DISABLEAWDL, disableAwdlDuringStream);
+    settings.setValue(SER_SHOWBATTERYOVERLAY, showBatteryOverlay);
     settings.setValue(SER_SWAPFACEBUTTONS, swapFaceButtons);
     settings.setValue(SER_CAPTURESYSKEYS, captureSysKeysMode);
     settings.setValue(SER_KEEPAWAKE, keepAwake);

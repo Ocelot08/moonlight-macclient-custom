@@ -820,3 +820,19 @@ Uint32 SdlInputHandler::batteryOverlayTimerCallback(Uint32 interval, void* param
     // Keep repeating at the same interval
     return interval;
 }
+
+void SdlInputHandler::enableBatteryOverlayIfRequested(bool enabled)
+{
+    if (!enabled) {
+        return;
+    }
+
+    // Silently stay off if there's no battery to report (e.g. a desktop Mac) -
+    // unlike the hotkey path, this runs automatically at startup rather than
+    // from a deliberate keypress, so there's no toast to show for it.
+    if (updateBatteryOverlayText()) {
+        Session::get()->getOverlayManager().setOverlayState(Overlay::OverlayBattery, true);
+        SDL_RemoveTimer(m_BatteryOverlayTimer);
+        m_BatteryOverlayTimer = SDL_AddTimer(BATTERY_OVERLAY_REFRESH_MS, batteryOverlayTimerCallback, this);
+    }
+}

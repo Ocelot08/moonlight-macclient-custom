@@ -152,6 +152,10 @@ public:
 
     void updatePointerRegionLock();
 
+    // Turns the battery overlay on at session start if requested, since it's
+    // otherwise only ever toggled live via its hotkey.
+    void enableBatteryOverlayIfRequested(bool enabled);
+
     static
     QString getUnmappedGamepads();
 

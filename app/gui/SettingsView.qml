@@ -1887,6 +1887,24 @@ Flickable {
                     ToolTip.text: qsTr("Turns off Apple Wireless Direct Link (used by AirDrop, AirPlay, and Handoff) for the duration of the stream, which can reduce Wi-Fi stutter.") + " " +
                                   qsTr("Requires a one-time passwordless sudo rule for 'ifconfig awdl0 down'/'up' (e.g. in /etc/sudoers.d/); otherwise this silently has no effect.")
                 }
+
+                CheckBox {
+                    id: showBatteryOverlayCheck
+                    width: parent.width
+                    visible: SystemProperties.isDarwin
+                    text: qsTr("Show battery status while streaming")
+                    font.pointSize: 12
+                    checked: StreamingPreferences.showBatteryOverlay
+                    onCheckedChanged: {
+                        StreamingPreferences.showBatteryOverlay = checked
+                    }
+
+                    ToolTip.delay: 1000
+                    ToolTip.timeout: 5000
+                    ToolTip.visible: hovered
+                    ToolTip.text: qsTr("Display this Mac's battery icon and percentage while streaming.") + " " +
+                                  qsTr("You can toggle it at any time while streaming using Ctrl+Alt+Shift+B.")
+                }
             }
         }
     }

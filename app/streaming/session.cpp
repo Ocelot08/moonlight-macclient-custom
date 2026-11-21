@@ -1997,6 +1997,10 @@ void Session::exec()
     // Toggle the stats overlay if requested by the user
     m_OverlayManager.setOverlayState(Overlay::OverlayDebug, m_Preferences->showPerformanceOverlay);
 
+    // Likewise for the battery overlay - otherwise it's only ever turned on
+    // live via its own hotkey (Ctrl+Alt+Shift+B)
+    m_InputHandler->enableBatteryOverlayIfRequested(m_Preferences->showBatteryOverlay);
+
     // Remind the user how to release their mouse from the stream window if
     // we're running windowed, since that's the one case people get surprised
     // by it. Unlike the toast/list overlays, this isn't user-toggled - it's

@@ -164,6 +164,7 @@ public:
     Q_PROPERTY(int scrollSpeedPercent MEMBER scrollSpeedPercent NOTIFY scrollSpeedPercentChanged)
     Q_PROPERTY(bool tickBasedScrolling MEMBER tickBasedScrolling NOTIFY tickBasedScrollingChanged)
     Q_PROPERTY(bool disableAwdlDuringStream MEMBER disableAwdlDuringStream NOTIFY disableAwdlDuringStreamChanged)
+    Q_PROPERTY(bool showBatteryOverlay MEMBER showBatteryOverlay NOTIFY showBatteryOverlayChanged)
     Q_PROPERTY(bool swapFaceButtons MEMBER swapFaceButtons NOTIFY swapFaceButtonsChanged)
     Q_PROPERTY(bool keepAwake MEMBER keepAwake NOTIFY keepAwakeChanged)
     Q_PROPERTY(CaptureSysKeysMode captureSysKeysMode MEMBER captureSysKeysMode NOTIFY captureSysKeysModeChanged)
@@ -201,6 +202,7 @@ public:
     int scrollSpeedPercent;
     bool tickBasedScrolling;
     bool disableAwdlDuringStream;
+    bool showBatteryOverlay;
     bool swapFaceButtons;
     bool keepAwake;
     int packetSize;
@@ -252,6 +254,7 @@ signals:
     void scrollSpeedPercentChanged();
     void tickBasedScrollingChanged();
     void disableAwdlDuringStreamChanged();
+    void showBatteryOverlayChanged();
     void swapFaceButtonsChanged();
     void captureSysKeysModeChanged();
     void keepAwakeChanged();
