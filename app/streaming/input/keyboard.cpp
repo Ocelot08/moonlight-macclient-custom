@@ -793,11 +793,11 @@ bool SdlInputHandler::updateBatteryOverlayText()
         return false;
     }
 
-    // The charging bolt is drawn as part of the icon prepended to this text
-    // (see OverlayManager::prependBatteryIcon), so the text itself is just the
-    // percentage - set the icon's state before the text update that triggers
-    // the icon to actually be (re)drawn.
-    Session::get()->getOverlayManager().setBatteryCharging(charging);
+    // The fill level and charging bolt are drawn as part of the icon prepended
+    // to this text (see OverlayManager::prependBatteryIcon), so the text itself
+    // is just the percentage - set the icon's state before the text update that
+    // triggers the icon to actually be (re)drawn.
+    Session::get()->getOverlayManager().setBatteryStatus(percentage, charging);
     Session::get()->getOverlayManager().updateOverlayText(Overlay::OverlayBattery,
                                                            QString("%1%").arg(percentage).toUtf8().constData());
     return true;

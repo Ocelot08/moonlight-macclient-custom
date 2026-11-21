@@ -44,14 +44,14 @@ public:
 
     void setOverlayRenderer(IOverlayRenderer* renderer);
 
-    // Whether the battery icon prepended to OverlayBattery's text should show
-    // its charging bolt. Only takes effect on that overlay's next text update.
-    void setBatteryCharging(bool charging);
+    // State for the battery icon prepended to OverlayBattery's text (fill level
+    // and charging bolt). Only takes effect on that overlay's next text update.
+    void setBatteryStatus(int percentage, bool charging);
 
 private:
     void notifyOverlayUpdated(OverlayType type);
     SDL_Surface* RenderTextOutlinedWrapped(TTF_Font* font, const char* text, SDL_Color textColor, SDL_Color outlineColor, int outlineWidth, int wrapWidth, bool tightenToContent);
-    SDL_Surface* prependBatteryIcon(SDL_Surface* textSurface, bool charging);
+    SDL_Surface* prependBatteryIcon(SDL_Surface* textSurface, int percentage, bool charging);
 
     struct {
         bool enabled;
@@ -69,6 +69,7 @@ private:
     IOverlayRenderer* m_Renderer;
     QByteArray m_FontData;
     QReadWriteLock m_OverlayRendererLock;
+    int m_BatteryPercentage;
     bool m_BatteryCharging;
 };
 

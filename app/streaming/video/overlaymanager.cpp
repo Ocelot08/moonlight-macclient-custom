@@ -6,6 +6,7 @@ using namespace Overlay;
 OverlayManager::OverlayManager() :
     m_Renderer(nullptr),
     m_FontData(Path::readDataFile("ModeSeven.ttf")),
+    m_BatteryPercentage(0),
     m_BatteryCharging(false)
 {
     memset(m_Overlays, 0, sizeof(m_Overlays));
@@ -142,8 +143,9 @@ SDL_Color OverlayManager::getOverlayColor(OverlayType type)
     return m_Overlays[type].color;
 }
 
-void OverlayManager::setBatteryCharging(bool charging)
+void OverlayManager::setBatteryStatus(int percentage, bool charging)
 {
+    m_BatteryPercentage = percentage;
     m_BatteryCharging = charging;
 }
 
@@ -216,7 +218,7 @@ void OverlayManager::notifyOverlayUpdated(OverlayType type)
         : nullptr;
 
     if (renderedSurface != nullptr && type == OverlayType::OverlayBattery) {
-        renderedSurface = prependBatteryIcon(renderedSurface, m_BatteryCharging);
+        renderedSurface = prependBatteryIcon(renderedSurface, m_BatteryPercentage, m_BatteryCharging);
     }
 
     // Exchange the old surface with the new one
@@ -314,11 +316,12 @@ SDL_Surface* OverlayManager::RenderTextOutlinedWrapped(TTF_Font* font, const cha
     return outlineSurface;
 }
 
-// A plain outlined rectangle (hollow, not filled) representing the battery body, a
-// small solid nub, and - only when charging - a blocky lightning bolt silhouette
-// drawn inside the hollow interior. No fill level is shown; this is purely a static
-// "this is battery info" / "this is charging" indicator, not a gauge.
-SDL_Surface* OverlayManager::prependBatteryIcon(SDL_Surface* textSurface, bool charging)
+// An outlined battery body with a solid nub, filled from the left by one of four
+// fixed steps (empty/low/half/full) based on percentage thresholds - not a smooth
+// gauge, just a discrete indicator - plus, when charging, a blocky lightning bolt
+// drawn with its own thin black halo so it stays visible whether it lands over the
+// filled (white) or unfilled (transparent) part of the body.
+SDL_Surface* OverlayManager::prependBatteryIcon(SDL_Surface* textSurface, int percentage, bool charging)
 {
     static const int BODY_W = 32;
     static const int BODY_H = 20;
@@ -340,29 +343,60 @@ SDL_Surface* OverlayManager::prependBatteryIcon(SDL_Surface* textSurface, bool c
     SDL_FillRect(composite, nullptr, SDL_MapRGBA(composite->format, 0, 0, 0, 0));
 
     Uint32 white = SDL_MapRGBA(composite->format, 0xFF, 0xFF, 0xFF, 0xFF);
+    Uint32 black = SDL_MapRGBA(composite->format, 0, 0, 0, 0xFF);
     Uint32 transparent = SDL_MapRGBA(composite->format, 0, 0, 0, 0);
     int iconY = (height - ICON_H) / 2;
 
-    // Battery body: a solid rect, then a transparent one punched out of its
-    // middle, leaving a hollow outline ring of width BORDER.
+    // Battery body, filled solid white to start
     SDL_Rect body = { 0, iconY, BODY_W, BODY_H };
     SDL_FillRect(composite, &body, white);
-    SDL_Rect bodyHole = { BORDER, iconY + BORDER, BODY_W - 2 * BORDER, BODY_H - 2 * BORDER };
-    SDL_FillRect(composite, &bodyHole, transparent);
 
-    // Nub, solid (too small to bother hollowing out)
+    // Four discrete fill steps rather than a continuous gauge: whatever portion
+    // (from the right) isn't "filled" at this step gets punched transparent,
+    // leaving a left-aligned solid bar of the stepped width (or none at all for
+    // "empty", or the whole interior for "full", which just leaves the body as
+    // solid as it already is above).
+    SDL_Rect interior = { BORDER, iconY + BORDER, BODY_W - 2 * BORDER, BODY_H - 2 * BORDER };
+    double fillFraction;
+    if (percentage >= 60) {
+        fillFraction = 1.0;
+    }
+    else if (percentage >= 30) {
+        fillFraction = 0.5;
+    }
+    else if (percentage >= 10) {
+        fillFraction = 0.25;
+    }
+    else {
+        fillFraction = 0.0;
+    }
+
+    int filledW = (int)(interior.w * fillFraction);
+    if (filledW < interior.w) {
+        SDL_Rect unfilled = { interior.x + filledW, interior.y, interior.w - filledW, interior.h };
+        SDL_FillRect(composite, &unfilled, transparent);
+    }
+
+    // Nub, solid (always shown, independent of fill level)
     SDL_Rect nub = { BODY_W, iconY + (BODY_H - NUB_H) / 2, NUB_W, NUB_H };
     SDL_FillRect(composite, &nub, white);
 
     if (charging) {
-        // A blocky lightning bolt, sized to fit within the hollow interior
-        int ix = bodyHole.x, iy = bodyHole.y, iw = bodyHole.w, ih = bodyHole.h;
-        SDL_Rect bolt1 = { ix + iw * 55 / 100, iy, iw * 35 / 100 + 1, ih * 55 / 100 + 1 };
-        SDL_Rect bolt2 = { ix + iw * 15 / 100, iy + ih * 45 / 100, iw * 35 / 100 + 1, ih * 55 / 100 + 1 };
-        SDL_Rect bolt3 = { ix + iw * 35 / 100, iy + ih * 35 / 100, iw * 30 / 100 + 1, ih * 30 / 100 + 1 };
-        SDL_FillRect(composite, &bolt1, white);
-        SDL_FillRect(composite, &bolt2, white);
-        SDL_FillRect(composite, &bolt3, white);
+        // A blocky lightning bolt, sized to fit within the body's interior
+        int ix = interior.x, iy = interior.y, iw = interior.w, ih = interior.h;
+        SDL_Rect bolts[3] = {
+            { ix + iw * 55 / 100, iy, iw * 35 / 100 + 1, ih * 55 / 100 + 1 },
+            { ix + iw * 15 / 100, iy + ih * 45 / 100, iw * 35 / 100 + 1, ih * 55 / 100 + 1 },
+            { ix + iw * 35 / 100, iy + ih * 35 / 100, iw * 30 / 100 + 1, ih * 30 / 100 + 1 },
+        };
+
+        for (const SDL_Rect& bolt : bolts) {
+            SDL_Rect halo = { bolt.x - 1, bolt.y - 1, bolt.w + 2, bolt.h + 2 };
+            SDL_FillRect(composite, &halo, black);
+        }
+        for (const SDL_Rect& bolt : bolts) {
+            SDL_FillRect(composite, &bolt, white);
+        }
     }
 
     // Blit the text alongside the icon, vertically centered
