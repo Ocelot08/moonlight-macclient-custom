@@ -5,7 +5,8 @@ using namespace Overlay;
 
 OverlayManager::OverlayManager() :
     m_Renderer(nullptr),
-    m_FontData(Path::readDataFile("ModeSeven.ttf"))
+    m_FontData(Path::readDataFile("ModeSeven.ttf")),
+    m_BatteryCharging(false)
 {
     memset(m_Overlays, 0, sizeof(m_Overlays));
 
@@ -35,10 +36,11 @@ OverlayManager::OverlayManager() :
     m_Overlays[OverlayType::OverlayWindowModeHint].color = {0xFF, 0xFF, 0xFF, 0xFF};
     m_Overlays[OverlayType::OverlayWindowModeHint].fontSize = 20;
 
-    // Fixed width so the box doesn't resize as the percentage or charging state
-    // changes. Set to "Battery: 100% (Charging)" (measured 416px at 28pt), plus
+    // Fixed width for just the percentage text (a battery icon is prepended to
+    // this in prependBatteryIcon(), separately fixed-size there, so the box as a
+    // whole still never resizes). Set to "100%" (measured 76px at 28pt), plus
     // 40px slack - re-measure and update this if the battery text ever changes.
-    static const int BATTERY_OVERLAY_FIXED_WIDTH = 456;
+    static const int BATTERY_OVERLAY_FIXED_WIDTH = 116;
 
     m_Overlays[OverlayType::OverlayBattery].color = {0xFF, 0xFF, 0xFF, 0xFF};
     m_Overlays[OverlayType::OverlayBattery].fontSize = 28;
@@ -140,6 +142,11 @@ SDL_Color OverlayManager::getOverlayColor(OverlayType type)
     return m_Overlays[type].color;
 }
 
+void OverlayManager::setBatteryCharging(bool charging)
+{
+    m_BatteryCharging = charging;
+}
+
 void OverlayManager::setOverlayRenderer(IOverlayRenderer* renderer)
 {
     {
@@ -197,19 +204,25 @@ void OverlayManager::notifyOverlayUpdated(OverlayType type)
     bool hasFixedWidth = m_Overlays[type].fixedWidth > 0;
     int renderWrapWidth = hasFixedWidth ? m_Overlays[type].fixedWidth : 1024;
 
+    SDL_Surface* renderedSurface = m_Overlays[type].enabled ?
+        // The _Wrapped variant is required for line breaks to work
+        RenderTextOutlinedWrapped(m_Overlays[type].font,
+                                  m_Overlays[type].text,
+                                  m_Overlays[type].color,
+                                  {0, 0, 0, 255},
+                                  4,
+                                  renderWrapWidth,
+                                  !hasFixedWidth)
+        : nullptr;
+
+    if (renderedSurface != nullptr && type == OverlayType::OverlayBattery) {
+        renderedSurface = prependBatteryIcon(renderedSurface, m_BatteryCharging);
+    }
+
     // Exchange the old surface with the new one
     SDL_Surface* oldSurface = (SDL_Surface*)SDL_AtomicSetPtr(
         (void**)&m_Overlays[type].surface,
-        m_Overlays[type].enabled ?
-            // The _Wrapped variant is required for line breaks to work
-            RenderTextOutlinedWrapped(m_Overlays[type].font,
-                                      m_Overlays[type].text,
-                                      m_Overlays[type].color,
-                                      {0, 0, 0, 255},
-                                      4,
-                                      renderWrapWidth,
-                                      !hasFixedWidth)
-            : nullptr);
+        renderedSurface);
 
     // Notify the renderer
     m_Renderer->notifyOverlayUpdated(type);
@@ -299,6 +312,66 @@ SDL_Surface* OverlayManager::RenderTextOutlinedWrapped(TTF_Font* font, const cha
     }
 
     return outlineSurface;
+}
+
+// A plain outlined rectangle (hollow, not filled) representing the battery body, a
+// small solid nub, and - only when charging - a blocky lightning bolt silhouette
+// drawn inside the hollow interior. No fill level is shown; this is purely a static
+// "this is battery info" / "this is charging" indicator, not a gauge.
+SDL_Surface* OverlayManager::prependBatteryIcon(SDL_Surface* textSurface, bool charging)
+{
+    static const int BODY_W = 32;
+    static const int BODY_H = 20;
+    static const int BORDER = 3;
+    static const int NUB_W = 4;
+    static const int NUB_H = 8;
+    static const int ICON_W = BODY_W + NUB_W;
+    static const int ICON_H = BODY_H;
+    static const int GAP = 10;
+
+    int width = ICON_W + GAP + textSurface->w;
+    int height = qMax(ICON_H, textSurface->h);
+
+    SDL_Surface* composite = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32, textSurface->format->format);
+    if (composite == nullptr) {
+        return textSurface;
+    }
+
+    SDL_FillRect(composite, nullptr, SDL_MapRGBA(composite->format, 0, 0, 0, 0));
+
+    Uint32 white = SDL_MapRGBA(composite->format, 0xFF, 0xFF, 0xFF, 0xFF);
+    Uint32 transparent = SDL_MapRGBA(composite->format, 0, 0, 0, 0);
+    int iconY = (height - ICON_H) / 2;
+
+    // Battery body: a solid rect, then a transparent one punched out of its
+    // middle, leaving a hollow outline ring of width BORDER.
+    SDL_Rect body = { 0, iconY, BODY_W, BODY_H };
+    SDL_FillRect(composite, &body, white);
+    SDL_Rect bodyHole = { BORDER, iconY + BORDER, BODY_W - 2 * BORDER, BODY_H - 2 * BORDER };
+    SDL_FillRect(composite, &bodyHole, transparent);
+
+    // Nub, solid (too small to bother hollowing out)
+    SDL_Rect nub = { BODY_W, iconY + (BODY_H - NUB_H) / 2, NUB_W, NUB_H };
+    SDL_FillRect(composite, &nub, white);
+
+    if (charging) {
+        // A blocky lightning bolt, sized to fit within the hollow interior
+        int ix = bodyHole.x, iy = bodyHole.y, iw = bodyHole.w, ih = bodyHole.h;
+        SDL_Rect bolt1 = { ix + iw * 55 / 100, iy, iw * 35 / 100 + 1, ih * 55 / 100 + 1 };
+        SDL_Rect bolt2 = { ix + iw * 15 / 100, iy + ih * 45 / 100, iw * 35 / 100 + 1, ih * 55 / 100 + 1 };
+        SDL_Rect bolt3 = { ix + iw * 35 / 100, iy + ih * 35 / 100, iw * 30 / 100 + 1, ih * 30 / 100 + 1 };
+        SDL_FillRect(composite, &bolt1, white);
+        SDL_FillRect(composite, &bolt2, white);
+        SDL_FillRect(composite, &bolt3, white);
+    }
+
+    // Blit the text alongside the icon, vertically centered
+    SDL_SetSurfaceBlendMode(textSurface, SDL_BLENDMODE_NONE);
+    SDL_Rect textDst = { ICON_W + GAP, (height - textSurface->h) / 2, textSurface->w, textSurface->h };
+    SDL_BlitSurface(textSurface, nullptr, composite, &textDst);
+    SDL_FreeSurface(textSurface);
+
+    return composite;
 }
 
 
