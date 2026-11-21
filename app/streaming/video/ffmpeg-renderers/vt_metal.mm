@@ -546,14 +546,22 @@ public:
                                         m_OverlayTextures[Overlay::OverlayWindowModeHint].height : 0;
                 }
                 else if (i == Overlay::OverlayHotkeyList) {
-                    // Top right
+                    // Top right, shifted down (further from the top edge) to make room
+                    // for the persistent battery overlay above it (if showing)
                     renderRect.x = m_LastDrawableWidth - overlayTexture.width;
-                    renderRect.y = m_LastDrawableHeight - overlayTexture.height;
+                    renderRect.y = m_LastDrawableHeight - overlayTexture.height -
+                                        ((m_OverlayTextures[Overlay::OverlayBattery] != nullptr) ?
+                                            m_OverlayTextures[Overlay::OverlayBattery].height : 0);
                 }
                 else if (i == Overlay::OverlayWindowModeHint) {
                     // Bottom right, flush to the corner - the toast above reserves space for it
                     renderRect.x = m_LastDrawableWidth - overlayTexture.width;
                     renderRect.y = 0;
+                }
+                else if (i == Overlay::OverlayBattery) {
+                    // Top right, flush to the corner - the hotkey list below it reserves space
+                    renderRect.x = m_LastDrawableWidth - overlayTexture.width;
+                    renderRect.y = m_LastDrawableHeight - overlayTexture.height;
                 }
 
                 renderRect.w = overlayTexture.width;

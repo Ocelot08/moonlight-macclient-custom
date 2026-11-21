@@ -3,8 +3,15 @@
 #include <Limelight.h>
 #include "SDL_compat.h"
 
+#ifdef Q_OS_DARWIN
+#include <IOKit/ps/IOPSKeys.h>
+#include <IOKit/ps/IOPowerSources.h>
+#endif
+
 #define VK_0 0x30
 #define VK_A 0x41
+
+#define BATTERY_OVERLAY_REFRESH_MS 15000
 
 // These are real Windows VK_* codes
 #ifndef VK_F1
@@ -242,6 +249,24 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
                     m_SwapCmdCtrlKeys ? "ON" : "OFF");
 
         showHotkeyToast(QString("Swap Command/Control keys: %1").arg(m_SwapCmdCtrlKeys ? "ON" : "OFF"));
+        refreshHotkeyListIfVisible();
+        break;
+
+    case KeyComboToggleBatteryOverlay:
+        if (Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayBattery)) {
+            Session::get()->getOverlayManager().setOverlayState(Overlay::OverlayBattery, false);
+            SDL_RemoveTimer(m_BatteryOverlayTimer);
+            m_BatteryOverlayTimer = 0;
+        }
+        else if (updateBatteryOverlayText()) {
+            Session::get()->getOverlayManager().setOverlayState(Overlay::OverlayBattery, true);
+            SDL_RemoveTimer(m_BatteryOverlayTimer);
+            m_BatteryOverlayTimer = SDL_AddTimer(BATTERY_OVERLAY_REFRESH_MS, batteryOverlayTimerCallback, this);
+        }
+        else {
+            // No battery present (e.g. a desktop Mac) - nothing to show
+            showHotkeyToast("No battery found on this Mac");
+        }
         refreshHotkeyListIfVisible();
         break;
 
@@ -698,6 +723,7 @@ QString SdlInputHandler::buildHotkeyStatusList()
     lines << QString("C  Cursor hidden: %1").arg(onOff(m_MouseCursorCapturedVisibilityState == SDL_DISABLE));
     lines << QString("L  Pointer region lock: %1").arg(onOff(m_PointerRegionLockActive));
     lines << QString("R  Tick-based scrolling: %1").arg(onOff(m_TickBasedScrollMode));
+    lines << QString("B  Battery overlay: %1").arg(onOff(Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayBattery)));
 
     return lines.join('\n');
 }
@@ -708,4 +734,88 @@ void SdlInputHandler::refreshHotkeyListIfVisible()
         Session::get()->getOverlayManager().updateOverlayText(Overlay::OverlayHotkeyList,
                                                                buildHotkeyStatusList().toUtf8().constData());
     }
+}
+
+#ifdef Q_OS_DARWIN
+// Returns false if no battery info could be found (e.g. a desktop Mac with no battery).
+static bool getMacBatteryStatus(int* outPercentage, bool* outCharging)
+{
+    CFTypeRef blob = IOPSCopyPowerSourcesInfo();
+    if (blob == nullptr) {
+        return false;
+    }
+
+    bool found = false;
+    CFArrayRef sources = IOPSCopyPowerSourcesList(blob);
+    if (sources != nullptr) {
+        for (CFIndex i = 0; i < CFArrayGetCount(sources); i++) {
+            CFDictionaryRef desc = IOPSGetPowerSourceDescription(blob, CFArrayGetValueAtIndex(sources, i));
+            if (desc == nullptr) {
+                continue;
+            }
+
+            CFNumberRef curCapacity = (CFNumberRef)CFDictionaryGetValue(desc, CFSTR(kIOPSCurrentCapacityKey));
+            CFNumberRef maxCapacity = (CFNumberRef)CFDictionaryGetValue(desc, CFSTR(kIOPSMaxCapacityKey));
+            if (curCapacity == nullptr || maxCapacity == nullptr) {
+                continue;
+            }
+
+            int cur = 0, max = 0;
+            CFNumberGetValue(curCapacity, kCFNumberIntType, &cur);
+            CFNumberGetValue(maxCapacity, kCFNumberIntType, &max);
+            if (max <= 0) {
+                continue;
+            }
+
+            *outPercentage = (int)((cur * 100.0 / max) + 0.5);
+
+            CFBooleanRef isCharging = (CFBooleanRef)CFDictionaryGetValue(desc, CFSTR(kIOPSIsChargingKey));
+            *outCharging = isCharging != nullptr && CFBooleanGetValue(isCharging);
+
+            found = true;
+            break;
+        }
+
+        CFRelease(sources);
+    }
+
+    CFRelease(blob);
+    return found;
+}
+#endif
+
+bool SdlInputHandler::updateBatteryOverlayText()
+{
+#ifdef Q_OS_DARWIN
+    int percentage;
+    bool charging;
+    if (!getMacBatteryStatus(&percentage, &charging)) {
+        return false;
+    }
+
+    QString text = QString("Battery: %1%").arg(percentage);
+    if (charging) {
+        text += " (Charging)";
+    }
+
+    Session::get()->getOverlayManager().updateOverlayText(Overlay::OverlayBattery, text.toUtf8().constData());
+    return true;
+#else
+    return false;
+#endif
+}
+
+Uint32 SdlInputHandler::batteryOverlayTimerCallback(Uint32 interval, void* param)
+{
+    SdlInputHandler* handler = (SdlInputHandler*)param;
+    if (!handler->updateBatteryOverlayText()) {
+        // The battery disappeared somehow (shouldn't normally happen) - turn the overlay off
+        if (Session::get() != nullptr) {
+            Session::get()->getOverlayManager().setOverlayState(Overlay::OverlayBattery, false);
+        }
+        return 0;
+    }
+
+    // Keep repeating at the same interval
+    return interval;
 }

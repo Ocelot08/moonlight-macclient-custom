@@ -171,6 +171,7 @@ private:
         KeyComboToggleScrollMode,
         KeyComboToggleHotkeyList,
         KeyComboToggleCmdCtrlSwap,
+        KeyComboToggleBatteryOverlay,
         KeyComboMax
     };
 
@@ -197,11 +198,18 @@ private:
 
     void refreshHotkeyListIfVisible();
 
+    // Returns false (and leaves the overlay text untouched) if no battery info
+    // is available, such as on a desktop Mac with no battery.
+    bool updateBatteryOverlayText();
+
     static
     Uint32 longPressTimerCallback(Uint32 interval, void* param);
 
     static
     Uint32 hotkeyToastTimerCallback(Uint32 interval, void* param);
+
+    static
+    Uint32 batteryOverlayTimerCallback(Uint32 interval, void* param);
 
     static
     Uint32 mouseEmulationTimerCallback(Uint32 interval, void* param);
@@ -224,6 +232,7 @@ private:
     double m_ScrollSpeedMultiplier;
     bool m_TickBasedScrollMode;
     SDL_TimerID m_HotkeyToastTimer;
+    SDL_TimerID m_BatteryOverlayTimer;
     double m_ScrollRemainderX;
     double m_ScrollRemainderY;
     bool m_SwapFaceButtons;

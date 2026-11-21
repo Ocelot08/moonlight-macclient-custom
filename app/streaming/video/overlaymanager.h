@@ -14,6 +14,7 @@ enum OverlayType {
     OverlayHotkeyToast,
     OverlayHotkeyList,
     OverlayWindowModeHint,
+    OverlayBattery,
     OverlayMax
 };
 

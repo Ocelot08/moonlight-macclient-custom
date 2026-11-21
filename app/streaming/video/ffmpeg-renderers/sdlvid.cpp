@@ -256,11 +256,14 @@ void SdlRenderer::renderOverlay(Overlay::OverlayType type)
                 m_OverlayRects[type].y = viewportRect.h - newSurface->h - reservedBelow;
             }
             else if (type == Overlay::OverlayHotkeyList) {
-                // Top right
+                // Top right, shifted down to make room for the persistent battery
+                // overlay above it (if showing)
                 SDL_Rect viewportRect;
                 SDL_RenderGetViewport(m_Renderer, &viewportRect);
+                int reservedAbove = Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayBattery) ?
+                                        m_OverlayRects[Overlay::OverlayBattery].h : 0;
                 m_OverlayRects[type].x = viewportRect.w - newSurface->w;
-                m_OverlayRects[type].y = 0;
+                m_OverlayRects[type].y = reservedAbove;
             }
             else if (type == Overlay::OverlayWindowModeHint) {
                 // Bottom right, flush to the corner - the toast above reserves space for it
@@ -268,6 +271,13 @@ void SdlRenderer::renderOverlay(Overlay::OverlayType type)
                 SDL_RenderGetViewport(m_Renderer, &viewportRect);
                 m_OverlayRects[type].x = viewportRect.w - newSurface->w;
                 m_OverlayRects[type].y = viewportRect.h - newSurface->h;
+            }
+            else if (type == Overlay::OverlayBattery) {
+                // Top right, flush to the corner - the hotkey list below it reserves space
+                SDL_Rect viewportRect;
+                SDL_RenderGetViewport(m_Renderer, &viewportRect);
+                m_OverlayRects[type].x = viewportRect.w - newSurface->w;
+                m_OverlayRects[type].y = 0;
             }
 
             m_OverlayRects[type].w = newSurface->w;

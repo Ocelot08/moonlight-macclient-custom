@@ -35,6 +35,15 @@ OverlayManager::OverlayManager() :
     m_Overlays[OverlayType::OverlayWindowModeHint].color = {0xFF, 0xFF, 0xFF, 0xFF};
     m_Overlays[OverlayType::OverlayWindowModeHint].fontSize = 20;
 
+    // Fixed width so the box doesn't resize as the percentage or charging state
+    // changes. Set to "Battery: 100% (Charging)" (measured 416px at 28pt), plus
+    // 40px slack - re-measure and update this if the battery text ever changes.
+    static const int BATTERY_OVERLAY_FIXED_WIDTH = 456;
+
+    m_Overlays[OverlayType::OverlayBattery].color = {0xFF, 0xFF, 0xFF, 0xFF};
+    m_Overlays[OverlayType::OverlayBattery].fontSize = 28;
+    m_Overlays[OverlayType::OverlayBattery].fixedWidth = BATTERY_OVERLAY_FIXED_WIDTH;
+
     // While TTF will usually not be initialized here, it is valid for that not to
     // be the case, since Session destruction is deferred and could overlap with
     // the lifetime of a new Session object.

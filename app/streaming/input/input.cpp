@@ -18,6 +18,7 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
       m_ScrollSpeedMultiplier(prefs.scrollSpeedPercent / 100.0),
       m_TickBasedScrollMode(prefs.tickBasedScrolling),
       m_HotkeyToastTimer(0),
+      m_BatteryOverlayTimer(0),
       m_ScrollRemainderX(0.0),
       m_ScrollRemainderY(0.0),
       m_SwapFaceButtons(prefs.swapFaceButtons),
@@ -156,6 +157,11 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
     m_SpecialKeyCombos[KeyComboToggleCmdCtrlSwap].scanCode = SDL_SCANCODE_W;
     m_SpecialKeyCombos[KeyComboToggleCmdCtrlSwap].enabled = true;
 
+    m_SpecialKeyCombos[KeyComboToggleBatteryOverlay].keyCombo = KeyComboToggleBatteryOverlay;
+    m_SpecialKeyCombos[KeyComboToggleBatteryOverlay].keyCode = SDLK_b;
+    m_SpecialKeyCombos[KeyComboToggleBatteryOverlay].scanCode = SDL_SCANCODE_B;
+    m_SpecialKeyCombos[KeyComboToggleBatteryOverlay].enabled = true;
+
     m_OldIgnoreDevices = SDL_GetHint(SDL_HINT_GAMECONTROLLER_IGNORE_DEVICES);
     m_OldIgnoreDevicesExcept = SDL_GetHint(SDL_HINT_GAMECONTROLLER_IGNORE_DEVICES_EXCEPT);
 
@@ -258,6 +264,11 @@ SdlInputHandler::~SdlInputHandler()
     SDL_RemoveTimer(m_LeftButtonReleaseTimer);
     SDL_RemoveTimer(m_RightButtonReleaseTimer);
     SDL_RemoveTimer(m_DragTimer);
+
+    // Unlike m_HotkeyToastTimer's callback, batteryOverlayTimerCallback dereferences
+    // the SdlInputHandler passed as its param, so it must not be allowed to fire
+    // after this object is destroyed.
+    SDL_RemoveTimer(m_BatteryOverlayTimer);
 
 #if !SDL_VERSION_ATLEAST(2, 0, 9)
     SDL_QuitSubSystem(SDL_INIT_HAPTIC);
